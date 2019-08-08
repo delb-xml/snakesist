@@ -20,10 +20,14 @@ Snakesist doesn't have a stable release yet; please use with care. Contributions
         pw='f0ob4r'
     )
 
-    db.root_collection = '/db/letters/'
+    db.root_collection = '/db/foo/'
 
     db.load_all_documents()
 
     for doc in db.documents:
-        print(doc.node.root[f'{xml}id'])
+        print(doc)
+        print(doc.node)
+        print(doc.node.root['some_attribute'])
+        print(doc.node.xpath('//someNode'))
+
 ```
