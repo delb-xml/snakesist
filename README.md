@@ -12,8 +12,8 @@ Snakesist doesn't have a stable release yet; please use with care. Contributions
 ## Usage example
 
 ```python
-    from snakesist.connector import ExistInstance, NSD_XML as xml, NSD_TEI as tei
-
+    from snakesist.connector import ExistInstance, NSD_XML as xml
+   
     db = ExistInstance(
         url='https://my.existdbinstance.org/exist/',
         usr='foo_bar',
