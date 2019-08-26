@@ -161,7 +161,7 @@ class ExistInstance:
                 return
             else:
                 raise e
-        except XMLSyntaxError as e:
+        except (XMLSyntaxError, ValueError) as e:
             # Try to recover not well-formed documents and save error
             lazy_parser = etree.XMLParser(recover=True)
             response_body = self._get_request(url)
