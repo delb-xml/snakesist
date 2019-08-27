@@ -1,6 +1,7 @@
 import os
 import delb
 import requests
+from snakesist.errors import ExistAPIError
 from lxml import etree
 from lxml.etree import XMLSyntaxError
 from requests.auth import HTTPBasicAuth
@@ -11,14 +12,6 @@ from urllib.parse import urljoin, quote, unquote
 NSD_TEI = "{http://www.tei-c.org/ns/1.0}"
 NSD_XML = "{http://www.w3.org/XML/1998/namespace}"
 NSD_EXIST = "{http://exist.sourceforge.net/NS/exist}"
-
-
-class ExistAPIError(Exception):
-    """
-    Raised when the eXist-db API throws an error
-    """
-
-    pass
 
 
 class ExistDocument:
