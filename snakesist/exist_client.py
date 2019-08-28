@@ -1,6 +1,3 @@
-from datetime import datetime
-startTime = datetime.now()
-
 """
 Connector tools for eXist-db
 """
