@@ -1,3 +1,6 @@
+from datetime import datetime
+startTime = datetime.now()
+
 """
 Connector tools for eXist-db
 """
@@ -150,7 +153,7 @@ class ExistClient:
         return url
 
     def _parse_item(self, node) -> tuple:
-        return (node["absid"], node["nodeid"], node.xpath("./*")[0].detach())
+        return (node["absid"], node["nodeid"], node[0])
 
     def query(self, query_expression: str, parser=PARSER) -> delb.Document:
         """
@@ -213,7 +216,7 @@ class ExistClient:
             result_node = self.query(
                 query_expression=f"util:get-resource-by-absolute-id({abs_resource_id})"
             )
-        return result_node.xpath("./*")[0].detach()
+        return result_node[0]
 
     def delete_resource(self, abs_resource_id: str, node_id=None) -> None:
         if node_id:
