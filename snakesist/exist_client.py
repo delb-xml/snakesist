@@ -162,7 +162,7 @@ class ExistClient:
         response_node = delb.Document(response_string, parser)
         return response_node
 
-    def retrieve_resources(self, xpath) -> iter:
+    def retrieve_resources(self, xpath) -> list:
         try:
             results_node = self.query(
                 query_expression=f"""for $node in {xpath} return 
@@ -178,8 +178,9 @@ class ExistClient:
 
         results = results_node.css_select("pyexist-result")
 
-        for item in results:
-            yield Resource(exist_client=self, query_result=self._parse_item(item))
+        return [
+            Resource(exist_client=self, query_result=self._parse_item(item)) for item in results
+        ]
 
     def update_resource(
         self, updated_node: str, abs_resource_id: str, node_id=None
