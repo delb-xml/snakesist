@@ -44,8 +44,7 @@ class Resource:
 
     def update_pull(self):
         self.node = self._exist_client.retrieve_resource(
-            abs_resource_id=self._abs_resource_id,
-            node_id=self._node_id,
+            abs_resource_id=self._abs_resource_id, node_id=self._node_id
         )
 
     def delete(self):
@@ -172,47 +171,27 @@ class ExistClient:
         try:
             results_node = self.query(
                 query_expression=f"""for $node in {xpath} return 
-                <pyexist-result nodeid="{{util:node-id($node)}}" 
-                absid="{{util:absolute-resource-id($node)}}">
-                {{$node}}</pyexist-result>"""
+                    <pyexist-result nodeid="{{util:node-id($node)}}" 
+                    absid="{{util:absolute-resource-id($node)}}">
+                    {{$node}}</pyexist-result>"""
             )
         except HTTPError:
             raise ExistAPIError(
-                f"""The attempt to retrieve resources with the expression {xpath} 
+                f"""The attempt to retrieve resources with the expression {xpath}
                 failed. The XPath expression might not be valid."""
             )
 
         results = results_node.css_select("pyexist-result")
 
         return [
-            Resource(exist_client=self, query_result=self._parse_item(item)) for item in results
+            Resource(exist_client=self, query_result=self._parse_item(item))
+            for item in results
         ]
-
-    def update_resource(
-        self, updated_node: str, abs_resource_id: str, node_id=None
-    ) -> None:
-        if node_id:
-            response = self.query(
-                query_expression=f"""
-                let $node := 
-                util:node-by-id(
-                    util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')
-                return update replace $node with {updated_node}
-                """
-            )
-        else:
-            response = self.query(
-                query_expression=f"""
-                let $node := util:get-resource-by-absolute-id({abs_resource_id})
-                return update replace $node with {updated_node}
-                """
-            )
 
     def retrieve_resource(self, abs_resource_id: str, node_id=None) -> delb.Document:
         if node_id:
             result_node = self.query(
-                query_expression=f"""
-                util:node-by-id(
+                query_expression=f"""util:node-by-id(
                     util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"""
             )
         else:
@@ -220,6 +199,23 @@ class ExistClient:
                 query_expression=f"util:get-resource-by-absolute-id({abs_resource_id})"
             )
         return result_node.xpath("./*")[0]
+
+    def update_resource(
+        self, updated_node: str, abs_resource_id: str, node_id=None
+    ) -> None:
+        if node_id:
+            response = self.query(
+                query_expression=f"""
+                let $node := util:node-by-id(
+                util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')
+                return update replace $node with {updated_node}"""
+            )
+        else:
+            response = self.query(
+                query_expression=f"""
+                let $node := util:get-resource-by-absolute-id({abs_resource_id})
+                return update replace $node with {updated_node}"""
+            )
 
     def delete_resource(self, abs_resource_id: str, node_id=None) -> None:
         if node_id:
