@@ -35,9 +35,15 @@ class Resource:
     def __str__(self):
         return str(self.node)
 
-    def update(self):
+    def update_push(self):
         self._exist_client.update_resource(
             updated_node=str(self.node),
+            abs_resource_id=self._abs_resource_id,
+            node_id=self._node_id,
+        )
+
+    def update_pull(self):
+        self.node = self._exist_client.retrieve_resource(
             abs_resource_id=self._abs_resource_id,
             node_id=self._node_id,
         )
