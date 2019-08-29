@@ -1,6 +1,13 @@
 snakesist
 =========
 
+.. image:: https://badge.fury.io/py/snakesist.svg
+    :target: https://badge.fury.io/py/snakesist
+
+.. image:: https://readthedocs.org/projects/snakesist/badge/?version=latest
+    :target: https://snakesist.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
 ``snakesist`` is an experimental Python database driver for `eXist-db <https://exist-db.org>`_.
 It currently only supports retrieving, updating and deleting resources.
 
