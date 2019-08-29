@@ -219,7 +219,7 @@ class ExistClient:
             result_node = self.query(
                 query_expression=f"util:get-resource-by-absolute-id({abs_resource_id})"
             )
-        return result_node[0]
+        return result_node.xpath("./*")[0]
 
     def delete_resource(self, abs_resource_id: str, node_id=None) -> None:
         if node_id:
