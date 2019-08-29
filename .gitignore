@@ -1,5 +1,7 @@
 dist/
 .vscode/
+docs/_*
+docs/make.bat
 **.egg-info/
 **/__pycache__/
 **.pyc

@@ -1,5 +1,6 @@
 """
-Connector tools for eXist-db
+.. module:: exist_client
+    :synopsis: A module containing basic tools for connecting to eXist.
 """
 
 from snakesist.errors import ExistAPIError
@@ -7,6 +8,7 @@ from urllib.parse import urljoin
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 from lxml.etree import XMLSyntaxError
+from typing import List
 from lxml import etree
 import requests
 import delb
@@ -14,11 +16,19 @@ import delb
 
 class Resource:
     """
-    A representation of an eXist resource. Each Resource object is
-    coupled to an ExistClient and can be updated or deleted.
+    A representation of an eXist resource (documents, nodes etc.). 
+    Each Resource object must be coupled to an :class:`ExistClient`.
+
+    Resources are identified by IDs: Some resources (documents) just have
+    an absolute resource ID, while others (nodes) require an additional node ID.
     """
 
     def __init__(self, exist_client, query_result: tuple = None):
+        """
+        :param exist_client: The client to which the resource is coupled.
+        :query_result: A tuple containing the absolute resource ID, node ID
+                       and the node of the resource.
+        """
         if query_result:
             self._abs_resource_id = query_result[0]
             self._node_id = query_result[1]
@@ -36,6 +46,9 @@ class Resource:
         return str(self.node)
 
     def update_push(self):
+        """
+        Write the resource object to the database.
+        """
         self._exist_client.update_resource(
             updated_node=str(self.node),
             abs_resource_id=self._abs_resource_id,
@@ -43,11 +56,17 @@ class Resource:
         )
 
     def update_pull(self):
+        """
+        Retrieve the current node state from the database and update the object.
+        """
         self.node = self._exist_client.retrieve_resource(
             abs_resource_id=self._abs_resource_id, node_id=self._node_id
         )
 
     def delete(self):
+        """
+        Remove the node from the database.
+        """
         self._exist_client.delete_resource(
             abs_resource_id=self._abs_resource_id, node_id=self._node_id
         )
@@ -56,19 +75,26 @@ class Resource:
 
     @property
     def abs_resource_id(self):
+        """
+        The absolute resource ID pointing to a document in the database.
+        """
         return self._abs_resource_id
 
     @property
     def node_id(self):
+        """
+        The node ID locating the node relative to the containing document.
+        """
         return self._node_id
 
 
 class ExistClient:
     """
-    An eXist-db client object which represents a database instance.
-    The client can be used for CRUD operations. Resources can be queries
-    using an XPath expression. Queried resources are identified by the absolute 
-    resource ID and, if the resource is part of a document, the node id.
+    An eXist-db client object representing a database instance.
+    The client can be used for RUD operations (no C at the moment). 
+    Resources can be queried using an XPath expression. 
+    Queried resources are identified by the absolute resource ID and, 
+    if the resource is part of a document, the node ID.
     """
 
     HOST = "localhost"
@@ -76,18 +102,16 @@ class ExistClient:
     USR = "admin"
     PARSER = etree.XMLParser(recover=True)
 
-    def __init__(self, host=HOST, port=PORT, usr=USR, pw="", prefix="exist"):
+    def __init__(self, host=HOST, port: int = PORT, usr=USR, pw="", prefix="exist"):
         """
-        Initialize an eXist client object
+        Connect to an eXist-db instance.
         
-        :param host: hostname of an eXist instance
+        :param host: hostname
         :param port: port used to connect to the configured eXist instance
         :param usr: username
         :param pw: password
         :param prefix: configured prefix for the eXist instance
-
         """
-
         self._root_collection = "/"
         self.host = host
         self.port = port
@@ -128,18 +152,28 @@ class ExistClient:
         else:
             req.raise_for_status()
 
+    def _parse_item(self, node) -> tuple:
+        return (node["absid"], node["nodeid"], node[0])
+
     @property
     def base_url(self):
+        """
+        The base URL pointing to the eXist instance.
+        """
         return f"http://{self.host}:{self.port}/{self.prefix}/"
 
     @property
     def root_collection(self):
+        """
+        The configured root collection for database queries.
+        """
         return self._root_collection
 
     @root_collection.setter
     def root_collection(self, collection):
         """
-        Set the path to the main collection (e. g. '/db/foo/bar/')
+        Set the path to the root collection for database 
+        queries (e. g. '/db/foo/bar/').
         """
 
         self._root_collection = collection
@@ -147,19 +181,22 @@ class ExistClient:
     @property
     def root_collection_url(self):
         """
-        Get the root collection URL
+        The URL pointing to the configured root collection.
         """
 
         data_path = self._join_paths("/rest/", self.root_collection)
         url = urljoin(self.base_url, data_path)
         return url
 
-    def _parse_item(self, node) -> tuple:
-        return (node["absid"], node["nodeid"], node[0])
-
-    def query(self, query_expression: str, parser=PARSER) -> delb.Document:
+    def query(
+        self, query_expression: str, parser=PARSER
+    ) -> delb.Document:
         """
         Make a database query using XQuery
+
+        :param query_expression: XQuery expression
+        :param parser: Parser used for processing XML
+        :return: The query result as a ``delb.Document`` object.
         """
         response_string = self._get_request(
             self.root_collection_url, query=query_expression
@@ -167,7 +204,15 @@ class ExistClient:
         response_node = delb.Document(response_string, parser)
         return response_node
 
-    def retrieve_resources(self, xpath) -> list:
+    def retrieve_resources(self, xpath) -> List["Resource"]:
+        """
+        Retrieve a set of resources from the database using
+        an XPath expression.
+
+        :param xpath: XPath expression (whatever version your eXist 
+                      instance supports via its RESTful API)
+        :return: The query results as a list of :class:`Resource` objects.
+        """
         try:
             results_node = self.query(
                 query_expression=f"""for $node in {xpath} return 
@@ -188,7 +233,16 @@ class ExistClient:
             for item in results
         ]
 
-    def retrieve_resource(self, abs_resource_id: str, node_id=None) -> delb.Document:
+    def retrieve_resource(
+        self, abs_resource_id: str, node_id=None
+    ) -> delb.Document:
+        """
+        Retrieve a single resource by its internal database IDs.
+
+        :param abs_resource_id: The absolute resource ID pointing to the document.
+        :param node_id: The node ID locating a node inside a document (optional).
+        :return: The queried node as a ``delb.TagNode`` object.
+        """
         if node_id:
             result_node = self.query(
                 query_expression=f"""util:node-by-id(
@@ -203,6 +257,12 @@ class ExistClient:
     def update_resource(
         self, updated_node: str, abs_resource_id: str, node_id=None
     ) -> None:
+        """
+        Replace a database resource with an updated one.
+
+        :param abs_resource_id: The absolute resource ID pointing to the document.
+        :param node_id: The node ID locating a node inside a document (optional).
+        """
         if node_id:
             response = self.query(
                 query_expression=f"""
@@ -217,7 +277,15 @@ class ExistClient:
                 return update replace $node with {updated_node}"""
             )
 
-    def delete_resource(self, abs_resource_id: str, node_id=None) -> None:
+    def delete_resource(
+        self, abs_resource_id: str, node_id=None
+    ) -> None:
+        """
+        Remove a database resource.
+
+        :param abs_resource_id: The absolute resource ID pointing to the document.
+        :param node_id: The node ID locating a node inside a document (optional).
+        """
         if node_id:
             response = self.query(
                 query_expression=f"""
