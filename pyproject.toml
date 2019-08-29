@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "snakesist"
-version = "0.1.0-alpha8"
+version = "0.1.0-beta1"
 description = "A Python database connector for eXist-db"
 authors = ["Theodor Costea <theo.costea@gmail.com>"]
 
