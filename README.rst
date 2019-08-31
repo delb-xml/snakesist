@@ -62,7 +62,7 @@ Stability
 This package doesn't have a stable release yet and lacks sufficient test coverage. 
 Please use with care. It also has `delb <https://delb.readthedocs.io/en/latest/>`_ 
 as a dependency (for accessing the document nodes), which is a very young project
-developed as a POC at the moment.
+developed as a proof of concept at the moment.
 
 
 Contributions, suggestions, bug reports and feature requests for ``snakesist`` 
