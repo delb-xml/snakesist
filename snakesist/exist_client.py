@@ -3,20 +3,21 @@
     :synopsis: A module containing basic tools for connecting to eXist.
 """
 
-from snakesist.errors import ExistAPIError
 from urllib.parse import urljoin
+from typing import List
+
+import delb
+import requests
+from lxml import etree
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
-from lxml.etree import XMLSyntaxError
-from typing import List
-from lxml import etree
-import requests
-import delb
+
+from snakesist.errors import ExistAPIError
 
 
 class Resource:
     """
-    A representation of an eXist resource (documents, nodes etc.). 
+    A representation of an eXist resource (documents, nodes etc.).
     Each Resource object must be coupled to an :class:`ExistClient`.
 
     Resources are identified by IDs: Some resources (documents) just have
@@ -91,9 +92,9 @@ class Resource:
 class ExistClient:
     """
     An eXist-db client object representing a database instance.
-    The client can be used for RUD operations (no C at the moment). 
-    Resources can be queried using an XPath expression. 
-    Queried resources are identified by the absolute resource ID and, 
+    The client can be used for RUD operations (no C at the moment).
+    Resources can be queried using an XPath expression.
+    Queried resources are identified by the absolute resource ID and,
     if the resource is part of a document, the node ID.
     """
 
@@ -105,7 +106,7 @@ class ExistClient:
     def __init__(self, host=HOST, port: int = PORT, usr=USR, pw="", prefix="exist"):
         """
         Connect to an eXist-db instance.
-        
+
         :param host: hostname
         :param port: port used to connect to the configured eXist instance
         :param usr: username
@@ -172,7 +173,7 @@ class ExistClient:
     @root_collection.setter
     def root_collection(self, collection):
         """
-        Set the path to the root collection for database 
+        Set the path to the root collection for database
         queries (e. g. '/db/foo/bar/').
         """
 
@@ -209,7 +210,7 @@ class ExistClient:
         Retrieve a set of resources from the database using
         an XPath expression.
 
-        :param xpath: XPath expression (whatever version your eXist 
+        :param xpath: XPath expression (whatever version your eXist
                       instance supports via its RESTful API)
         :return: The query results as a list of :class:`Resource` objects.
         """
