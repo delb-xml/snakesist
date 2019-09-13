@@ -4,7 +4,7 @@
 """
 
 from urllib.parse import urljoin
-from typing import List
+from typing import List, Optional, Tuple
 
 import delb
 import requests
@@ -13,6 +13,16 @@ from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
 from snakesist.errors import ExistAPIError
+
+
+QueryResultItem = Tuple[str, str, delb.TagNode]
+
+
+DEFAULT_HOST = "localhost"
+DEFAULT_PORT = 8080
+DEFAULT_USER = "admin"
+DEFAULT_PASSWORD = ""
+DEFAULT_PARSER = etree.XMLParser(recover=True)
 
 
 class Resource:
@@ -24,20 +34,20 @@ class Resource:
     an absolute resource ID, while others (nodes) require an additional node ID.
     """
 
-    def __init__(self, exist_client, query_result: tuple = None):
+    def __init__(
+            self,
+            exist_client: "ExistClient",
+            query_result: Optional[QueryResultItem] = None
+    ):
         """
         :param exist_client: The client to which the resource is coupled.
         :query_result: A tuple containing the absolute resource ID, node ID
                        and the node of the resource.
         """
+        self._exist_client = exist_client
+
         if query_result:
-            self._abs_resource_id = query_result[0]
-            self._node_id = query_result[1]
-            self._exist_client = exist_client
-            if query_result[2]:
-                self.node = query_result[2]
-            else:
-                self.node = None
+            self._abs_resource_id, self._node_id, self.node = query_result
         else:
             self._abs_resource_id = None
             self._node_id = None
@@ -96,82 +106,85 @@ class ExistClient:
     Resources can be queried using an XPath expression.
     Queried resources are identified by the absolute resource ID and,
     if the resource is part of a document, the node ID.
+
+    :param host: hostname
+    :param port: port used to connect to the configured eXist instance
+    :param user: username
+    :param password: password
+    :param prefix: configured prefix for the eXist instance
+    :param parser: an lxml etree.XMLParser instance to parse query results
     """
 
-    HOST = "localhost"
-    PORT = 8080
-    USR = "admin"
-    PARSER = etree.XMLParser(recover=True)
-
-    def __init__(self, host=HOST, port: int = PORT, usr=USR, pw="", prefix="exist"):
-        """
-        Connect to an eXist-db instance.
-
-        :param host: hostname
-        :param port: port used to connect to the configured eXist instance
-        :param usr: username
-        :param pw: password
-        :param prefix: configured prefix for the eXist instance
-        """
+    def __init__(
+            self,
+            host: str = DEFAULT_HOST,
+            port: int = DEFAULT_PORT,
+            user: str = DEFAULT_USER,
+            password: str = DEFAULT_PASSWORD,
+            prefix: str = "exist",
+            parser:etree.XMLParser = DEFAULT_PARSER
+    ):
         self._root_collection = "/"
         self.host = host
         self.port = port
-        self.usr = usr
-        self.pw = pw
+        self.user = user
+        self.password = password
         self.prefix = prefix
+        self.parser = parser
 
     @staticmethod
     def _join_paths(*args):
         return "/".join(s.strip("/") for s in args)
 
-    def _get_request(self, url, query=None):
-        headers = {"Content-Type": "application/xml"}
+    def _get_request(self, url: str, query: Optional[str] = None) -> str:
         if query:
             params = {"_howmany": 0, "_indent": "no", "_query": query}
-            req = requests.get(
-                url,
-                headers=headers,
-                auth=HTTPBasicAuth(self.usr, self.pw),
-                params=params,
-            )
         else:
-            req = requests.get(
-                url, headers=headers, auth=HTTPBasicAuth(self.usr, self.pw)
-            )
-        if req.status_code == requests.codes.ok:
-            return req.content
-        else:
-            req.raise_for_status()
+            params = {}
 
-    def _put_request(self, url, data):
-        headers = {"Content-Type": "application/xml"}
-        req = requests.put(
-            url, headers=headers, auth=HTTPBasicAuth(self.usr, self.pw), data=data
+        response = requests.get(
+            url,
+            headers={"Content-Type": "application/xml"},
+            auth=HTTPBasicAuth(self.user, self.password),
+            params=params
         )
-        if req.status_code == requests.codes.ok:
-            return req.content
+        if response.status_code == requests.codes.ok:
+            return response.content
         else:
-            req.raise_for_status()
+            response.raise_for_status()
 
-    def _parse_item(self, node) -> tuple:
-        return (node["absid"], node["nodeid"], node[0])
+    def _put_request(self, url: str, data: str) -> str:
+        response = requests.put(
+            url,
+            headers={"Content-Type": "application/xml"},
+            auth=HTTPBasicAuth(self.user, self.password),
+            data=data
+        )
+        if response.status_code == requests.codes.ok:
+            return response.content
+        else:
+            response.raise_for_status()
+
+    @staticmethod
+    def _parse_item(node: delb.TagNode) -> QueryResultItem:
+        return node["absid"], node["nodeid"], node.first_child
 
     @property
-    def base_url(self):
+    def base_url(self) -> str:
         """
         The base URL pointing to the eXist instance.
         """
         return f"http://{self.host}:{self.port}/{self.prefix}/"
 
     @property
-    def root_collection(self):
+    def root_collection(self) -> str:
         """
         The configured root collection for database queries.
         """
         return self._root_collection
 
     @root_collection.setter
-    def root_collection(self, collection):
+    def root_collection(self, collection: str):
         """
         Set the path to the root collection for database
         queries (e. g. '/db/foo/bar/').
@@ -189,9 +202,7 @@ class ExistClient:
         url = urljoin(self.base_url, data_path)
         return url
 
-    def query(
-        self, query_expression: str, parser=PARSER
-    ) -> delb.Document:
+    def query(self, query_expression: str) -> delb.Document:
         """
         Make a database query using XQuery
 
@@ -202,10 +213,9 @@ class ExistClient:
         response_string = self._get_request(
             self.root_collection_url, query=query_expression
         )
-        response_node = delb.Document(response_string, parser)
-        return response_node
+        return delb.Document(response_string, self.parser)
 
-    def retrieve_resources(self, xpath) -> List["Resource"]:
+    def retrieve_resources(self, xpath: str) -> List[Resource]:
         """
         Retrieve a set of resources from the database using
         an XPath expression.
@@ -227,15 +237,13 @@ class ExistClient:
                 failed. The XPath expression might not be valid."""
             )
 
-        results = results_node.css_select("pyexist-result")
-
         return [
             Resource(exist_client=self, query_result=self._parse_item(item))
-            for item in results
+            for item in results_node.css_select("pyexist-result")
         ]
 
     def retrieve_resource(
-        self, abs_resource_id: str, node_id=None
+        self, abs_resource_id: str, node_id: Optional[str] = None
     ) -> delb.Document:
         """
         Retrieve a single resource by its internal database IDs.
@@ -256,7 +264,7 @@ class ExistClient:
         return result_node.xpath("./*")[0]
 
     def update_resource(
-        self, updated_node: str, abs_resource_id: str, node_id=None
+        self, updated_node: str, abs_resource_id: str, node_id: Optional[str] = None
     ) -> None:
         """
         Replace a database resource with an updated one.
@@ -265,21 +273,21 @@ class ExistClient:
         :param node_id: The node ID locating a node inside a document (optional).
         """
         if node_id:
-            response = self.query(
+            self.query(
                 query_expression=f"""
                 let $node := util:node-by-id(
                 util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')
                 return update replace $node with {updated_node}"""
             )
         else:
-            response = self.query(
+            self.query(
                 query_expression=f"""
                 let $node := util:get-resource-by-absolute-id({abs_resource_id})
                 return update replace $node with {updated_node}"""
             )
 
     def delete_resource(
-        self, abs_resource_id: str, node_id=None
+        self, abs_resource_id: str, node_id: Optional[str] = None
     ) -> None:
         """
         Remove a database resource.
@@ -288,14 +296,13 @@ class ExistClient:
         :param node_id: The node ID locating a node inside a document (optional).
         """
         if node_id:
-            response = self.query(
-                query_expression=f"""
+            self.query(query_expression=f"""
                 let $node := util:node-by-id(
                     util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')
                 return update delete $node"""
             )
         else:
-            response = self.query(
+            self.query(
                 query_expression=f"""
                 let $node := util:get-resource-by-absolute-id({abs_resource_id})
                 return update delete $node"""
