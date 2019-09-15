@@ -2,19 +2,30 @@
 name = "snakesist"
 version = "0.1.0-beta1"
 description = "A Python database connector for eXist-db"
+# TOOD license
 authors = ["Theodor Costea <theo.costea@gmail.com>"]
+readme = "README.rst"
+repository = "https://github.com/03b8/snakesist"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Topic :: Text Processing :: Markup :: XML",
+]
+keywords = ["xml", "exist-db", "client"]
 
 [tool.poetry.dependencies]
 python = "^3.6"
 requests = "^2.22"
 lxml = "^4.3"
-delb = "^0.1.0"
-sphinx_rtd_theme = "^0.4.3"
+delb = "^0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
 requests_mock = "^1.6"
 sphinx = "*"
+sphinx_rtd_theme = "^0.4.3"
 
 [build-system]
 requires = ["poetry>=0.12"]
