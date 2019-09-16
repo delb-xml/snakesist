@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple
 
 import delb
 import requests
-from lxml import etree
+from lxml import etree  # type: ignore
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
@@ -44,14 +44,15 @@ class Resource:
         :query_result: A tuple containing the absolute resource ID, node ID
                        and the node of the resource.
         """
+        self.node: Optional[delb.TagNode]
+
         self._exist_client = exist_client
 
         if query_result:
             self._abs_resource_id, self._node_id, self.node = query_result
         else:
-            self._abs_resource_id = None
-            self._node_id = None
-            self.node = delb.TagNode()
+            self._abs_resource_id = self._node_id = ""
+            self.node = None
 
     def __str__(self):
         return str(self.node)
@@ -111,7 +112,7 @@ class ExistClient:
     :param port: port used to connect to the configured eXist instance
     :param user: username
     :param password: password
-    :param prefix: configured prefix for the eXist instance
+    :param prefix: configured path prefix for the eXist instance
     :param parser: an lxml etree.XMLParser instance to parse query results
     """
 
@@ -136,9 +137,9 @@ class ExistClient:
     def _join_paths(*args):
         return "/".join(s.strip("/") for s in args)
 
-    def _get_request(self, url: str, query: Optional[str] = None) -> str:
+    def _get_request(self, url: str, query: Optional[str] = None) -> bytes:
         if query:
-            params = {"_howmany": 0, "_indent": "no", "_query": query}
+            params = {"_howmany": "0", "_indent": "no", "_query": query}
         else:
             params = {}
 
@@ -148,26 +149,30 @@ class ExistClient:
             auth=HTTPBasicAuth(self.user, self.password),
             params=params
         )
-        if response.status_code == requests.codes.ok:
-            return response.content
-        else:
+
+        if response.status_code != requests.codes.ok:
             response.raise_for_status()
 
-    def _put_request(self, url: str, data: str) -> str:
+        return response.content
+
+    def _put_request(self, url: str, data: str) -> bytes:
         response = requests.put(
             url,
             headers={"Content-Type": "application/xml"},
             auth=HTTPBasicAuth(self.user, self.password),
             data=data
         )
-        if response.status_code == requests.codes.ok:
-            return response.content
-        else:
+
+        if response.status_code != requests.codes.ok:
             response.raise_for_status()
+
+        return response.content
 
     @staticmethod
     def _parse_item(node: delb.TagNode) -> QueryResultItem:
-        return node["absid"], node["nodeid"], node.first_child
+        content_node = node.first_child
+        assert isinstance(content_node, delb.TagNode)
+        return node["absid"], node["nodeid"], content_node
 
     @property
     def base_url(self) -> str:
@@ -243,8 +248,8 @@ class ExistClient:
         ]
 
     def retrieve_resource(
-        self, abs_resource_id: str, node_id: Optional[str] = None
-    ) -> delb.Document:
+        self, abs_resource_id: str, node_id: str = ""
+    ) -> Resource:
         """
         Retrieve a single resource by its internal database IDs.
 
@@ -264,7 +269,7 @@ class ExistClient:
         return result_node.xpath("./*")[0]
 
     def update_resource(
-        self, updated_node: str, abs_resource_id: str, node_id: Optional[str] = None
+        self, updated_node: str, abs_resource_id: str, node_id: str = ""
     ) -> None:
         """
         Replace a database resource with an updated one.
@@ -287,7 +292,7 @@ class ExistClient:
             )
 
     def delete_resource(
-        self, abs_resource_id: str, node_id: Optional[str] = None
+        self, abs_resource_id: str, node_id: str = ""
     ) -> None:
         """
         Remove a database resource.
