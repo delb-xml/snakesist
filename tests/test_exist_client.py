@@ -4,7 +4,7 @@ import requests
 from requests.exceptions import HTTPError
 from snakesist.exist_client import Resource, ExistClient
 
-ROOT_COLL = "/db/mock"
+ROOT_COLL = "/db/tests"
 BASE_URL = f"http://admin:@localhost:8080/exist/rest{ROOT_COLL}?_wrap=no&_indent=no"
 
 
@@ -30,4 +30,4 @@ def test_exist_client_create_resource_wellformed(db):
 def test_exist_client_create_resource_malformed(db):
     new_node = '<exapl id="t1">tags do not match</example>'
     with pytest.raises(HTTPError):
-        db.create_resource("/projects/test", new_node)
+        db.create_resource("/foo", new_node)
