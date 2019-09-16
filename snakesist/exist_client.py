@@ -172,7 +172,7 @@ class ExistClient:
     def _parse_item(node: delb.TagNode) -> QueryResultItem:
         content_node = node.first_child
         assert isinstance(content_node, delb.TagNode)
-        return node["absid"], node["nodeid"], content_node
+        return node["absid"], node["nodeid"], content_node.detach()
 
     @property
     def base_url(self) -> str:
@@ -266,7 +266,7 @@ class ExistClient:
             result_node = self.query(
                 query_expression=f"util:get-resource-by-absolute-id({abs_resource_id})"
             )
-        return result_node.xpath("./*")[0]
+        return result_node.xpath("./*")[0].detach()
 
     def update_resource(
         self, updated_node: str, abs_resource_id: str, node_id: str = ""
