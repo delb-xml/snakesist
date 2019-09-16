@@ -27,8 +27,8 @@ Usage example
     db = ExistClient(
         host='my.existdbinstance.org',  # defaults to 'localhost'
         port='80',  # defaults to 8080
-        usr='foo_bar',  # defaults to 'admin'
-        pw='f0ob4r'  # defaults to ''
+        user='foo_bar',  # defaults to 'admin'
+        passwordw='f0ob4r'  # defaults to ''
     )
 
     db.root_collection = '/db/foo/bar'
