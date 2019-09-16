@@ -6,3 +6,4 @@ docs/make.bat
 **.egg-info/
 **/__pycache__/
 **.pyc
+.pytest_cache

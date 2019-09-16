@@ -1,24 +1,33 @@
 import pytest
+import urllib
 import requests
-import requests_mock
+from requests.exceptions import HTTPError
 from snakesist.exist_client import Resource, ExistClient
 
-@pytest.fixture
-@requests_mock.Mocker()
-def initalize_db_mocker(m):
-    query = {
-        'retrieve': f"""util:node-by-id(
-            util:get-resource-by-absolute-id(2568390447132), '1.6.2.3.17.8.2')"""
-    }
-    m.get(
-        f"""http://localhost:8080/exist/rest/db/mock?_howmany=0
-            &_query={query['retrieve']}""",
-        text="""<exist:result exist:hits="1" exist:start="1" exist:count="1" 
-            exist:compilation-time="0" exist:execution-time="0">
-            <corr cert="high">liberazione</corr></exist:result>"""
-    )
+ROOT_COLL = "/db/mock"
+BASE_URL = f"http://admin:@localhost:8080/exist/rest{ROOT_COLL}?_wrap=no&_indent=no"
 
-def test_exist_client_retrieve():
+
+@pytest.fixture
+def db():
+    """
+    Database setup and teardown
+    """
     db = ExistClient()
-    resource = db.retrieve_resource("2568390447132", "1.6.2.3.17.8.2")
-    assert str(resource) == '<corr xmlns="http://www.tei-c.org/ns/1.0" cert="high">liberazione</corr>'
+    db.root_collection = ROOT_COLL
+    yield db
+    requests.get(f"{BASE_URL}&_query=xmldb:remove('{ROOT_COLL}')")
+
+
+def test_exist_client_create_resource_wellformed(db):
+    new_node = '<example id="t1">wow a document node</example>'
+    db.create_resource("/foo", new_node)
+    response = requests.get(f"{BASE_URL}&_query=//example[@id='t1']")
+    node = response.content
+    assert node.decode() == new_node
+
+
+def test_exist_client_create_resource_malformed(db):
+    new_node = '<exapl id="t1">tags do not match</example>'
+    with pytest.raises(HTTPError):
+        db.create_resource("/projects/test", new_node)
