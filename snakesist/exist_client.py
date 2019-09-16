@@ -80,7 +80,7 @@ class Resource:
         """
         Remove the node from the database.
         """
-        self._exist_client.delete_resource(s
+        self._exist_client.delete_resource(
             abs_resource_id=self._abs_resource_id, node_id=self._node_id
         )
         self._node_id = None
