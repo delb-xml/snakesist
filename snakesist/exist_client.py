@@ -9,6 +9,7 @@ from typing import List, Optional, Tuple
 import delb
 import requests
 from lxml import etree  # type: ignore
+from uuid import uuid4
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
@@ -103,7 +104,7 @@ class Resource:
 class ExistClient:
     """
     An eXist-db client object representing a database instance.
-    The client can be used for RUD operations (no C at the moment).
+    The client can be used for CRUD operations.
     Resources can be queried using an XPath expression.
     Queried resources are identified by the absolute resource ID and,
     if the resource is part of a document, the node ID.
@@ -219,6 +220,17 @@ class ExistClient:
             self.root_collection_url, query=query_expression
         )
         return delb.Document(response_string, self.parser)
+
+    def create_resource(self, collection_path: str, node: str):
+        """
+        Write a new document node to the database.
+
+        :param collection_path: Collection where document will be stored
+        :param node: XML string
+        """
+        path = self._join_paths(collection_path, uuid4().hex)
+        url = f"{self.root_collection_url}/{path}"
+        self._put_request(url, node)
 
     def retrieve_resources(self, xpath: str) -> List[Resource]:
         """

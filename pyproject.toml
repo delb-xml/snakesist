@@ -23,7 +23,6 @@ delb = "^0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
-requests_mock = "^1.6"
 sphinx = "*"
 sphinx_rtd_theme = "^0.4.3"
 mypy = "^0.720.0"

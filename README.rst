@@ -9,7 +9,7 @@ snakesist
     :alt: Documentation Status
 
 ``snakesist`` is an experimental Python database driver for `eXist-db <https://exist-db.org>`_.
-It currently only supports retrieving, updating and deleting resources.
+It supports creating, retrieving, updating and deleting resources.
 
 .. code-block:: shell
 
