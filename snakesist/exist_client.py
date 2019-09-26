@@ -101,6 +101,40 @@ class Resource:
         return self._node_id
 
 
+class DocumentResource(Resource):
+    """
+    A representation of an eXist document node
+    """
+    def __init__(
+            self,
+            exist_client: "ExistClient",
+            query_result: Optional[QueryResultItem] = None
+    ):
+        """
+        :param exist_client: The client to which the resource is coupled.
+        :query_result: A tuple containing the absolute resource ID, node ID
+                       and the node of the resource.
+        """
+        super().__init__(exist_client, query_result)
+
+
+class NodeResource(Resource):
+    """
+    A representation of an eXist node at the sub-document level
+    """
+    def __init__(
+            self,
+            exist_client: "ExistClient",
+            query_result: Optional[QueryResultItem] = None
+    ):
+        """
+        :param exist_client: The client to which the resource is coupled.
+        :query_result: A tuple containing the absolute resource ID, node ID
+                       and the node of the resource.
+        """
+        super().__init__(exist_client, query_result)
+
+
 class ExistClient:
     """
     An eXist-db client object representing a database instance.
@@ -254,10 +288,16 @@ class ExistClient:
                 failed. The XPath expression might not be valid."""
             )
 
-        return [
-            Resource(exist_client=self, query_result=self._parse_item(item))
-            for item in results_node.css_select("pyexist-result")
-        ]
+        resources = []
+        for item in results_node.css_select("pyexist-result"):
+            query_result = self._parse_item(item)
+            if query_result[1] == "1":
+                resource = DocumentResource(exist_client=self, query_result=query_result)
+            else:
+                resource = NodeResource(exist_client=self, query_result=query_result)
+            resources.append(resource)
+
+        return resources
 
     def retrieve_resource(
         self, abs_resource_id: str, node_id: str = ""
