@@ -8,6 +8,7 @@ from typing import List, Optional, Tuple
 
 import delb
 import requests
+from abc import ABC
 from lxml import etree  # type: ignore
 from uuid import uuid4
 from requests.auth import HTTPBasicAuth
@@ -16,7 +17,7 @@ from requests.exceptions import HTTPError
 from snakesist.errors import ExistAPIError
 
 
-QueryResultItem = Tuple[str, str, delb.TagNode]
+QueryResultItem = Tuple[str, str, str, delb.TagNode]
 
 
 DEFAULT_HOST = "localhost"
@@ -26,7 +27,7 @@ DEFAULT_PASSWORD = ""
 DEFAULT_PARSER = etree.XMLParser(recover=True)
 
 
-class Resource:
+class Resource(ABC):
     """
     A representation of an eXist resource (documents, nodes etc.).
     Each Resource object must be coupled to an :class:`ExistClient`.
@@ -50,23 +51,14 @@ class Resource:
         self._exist_client = exist_client
 
         if query_result:
-            self._abs_resource_id, self._node_id, self.node = query_result
+            self._abs_resource_id, self._node_id, self.path, self.node = query_result
         else:
             self._abs_resource_id = self._node_id = ""
             self.node = None
+            self.path = None
 
     def __str__(self):
         return str(self.node)
-
-    def update_push(self):
-        """
-        Write the resource object to the database.
-        """
-        self._exist_client.update_resource(
-            updated_node=str(self.node),
-            abs_resource_id=self._abs_resource_id,
-            node_id=self._node_id,
-        )
 
     def update_pull(self):
         """
@@ -75,16 +67,6 @@ class Resource:
         self.node = self._exist_client.retrieve_resource(
             abs_resource_id=self._abs_resource_id, node_id=self._node_id
         )
-
-    def delete(self):
-        """
-        Remove the node from the database.
-        """
-        self._exist_client.delete_resource(
-            abs_resource_id=self._abs_resource_id, node_id=self._node_id
-        )
-        self._node_id = None
-        self._abs_resource_id = None
 
     @property
     def abs_resource_id(self):
@@ -117,6 +99,23 @@ class DocumentResource(Resource):
         """
         super().__init__(exist_client, query_result)
 
+    def delete(self):
+        """
+        Remove the document from the database.
+        """
+        self._exist_client.delete_document(abs_resource_id=self._abs_resource_id)
+        self._node_id = None
+        self._abs_resource_id = None
+
+    def update_push(self):
+        """
+        Write the resource object to the database.
+        """
+        self._exist_client.update_document(
+            updated_node=str(self.node),
+            abs_resource_id=self._abs_resource_id,
+        )
+
 
 class NodeResource(Resource):
     """
@@ -133,6 +132,26 @@ class NodeResource(Resource):
                        and the node of the resource.
         """
         super().__init__(exist_client, query_result)
+
+    def delete(self):
+        """
+        Remove the node from the database.
+        """
+        self._exist_client.delete_node(
+            abs_resource_id=self._abs_resource_id, node_id=self._node_id
+        )
+        self._node_id = None
+        self._abs_resource_id = None
+
+    def update_push(self):
+        """
+        Write the resource object to the database.
+        """
+        self._exist_client.update_node(
+            updated_node=str(self.node),
+            abs_resource_id=self._abs_resource_id,
+            node_id=self._node_id,
+        )
 
 
 class ExistClient:
@@ -172,9 +191,13 @@ class ExistClient:
     def _join_paths(*args):
         return "/".join(s.strip("/") for s in args)
 
-    def _get_request(self, url: str, query: Optional[str] = None) -> bytes:
+    def _get_request(self, url: str, query: Optional[str] = None, wrap: bool = True) -> bytes:
+        if wrap:
+            wrap_value = "yes"
+        else:
+            wrap_value = "no"
         if query:
-            params = {"_howmany": "0", "_indent": "no", "_query": query}
+            params = {"_howmany": "0", "_indent": "no", "_wrap": wrap_value, "_query": query}
         else:
             params = {}
 
@@ -203,11 +226,21 @@ class ExistClient:
 
         return response.content
 
+    def _delete_request(self, url: str) -> None:
+        response = requests.delete(
+            url,
+            headers={"Content-Type": "application/xml"},
+            auth=HTTPBasicAuth(self.user, self.password),
+        )
+
+        if response.status_code != requests.codes.ok:
+            response.raise_for_status()
+
     @staticmethod
     def _parse_item(node: delb.TagNode) -> QueryResultItem:
         content_node = node.first_child
         assert isinstance(content_node, delb.TagNode)
-        return node["absid"], node["nodeid"], content_node.detach()
+        return node["absid"], node["nodeid"], node["path"], content_node.detach()
 
     @property
     def base_url(self) -> str:
@@ -275,19 +308,15 @@ class ExistClient:
                       instance supports via its RESTful API)
         :return: The query results as a list of :class:`Resource` objects.
         """
-        try:
-            results_node = self.query(
-                query_expression=f"""for $node in {xpath} return 
-                    <pyexist-result nodeid="{{util:node-id($node)}}" 
-                    absid="{{util:absolute-resource-id($node)}}">
-                    {{$node}}</pyexist-result>"""
-            )
-        except HTTPError:
-            raise ExistAPIError(
-                f"""The attempt to retrieve resources with the expression {xpath}
-                failed. The XPath expression might not be valid."""
-            )
-
+        xq = (
+            f"for $node in {xpath} "
+            f"return <pyexist-result "
+            f"nodeid='{{util:node-id($node)}}' " 
+            f"absid='{{util:absolute-resource-id($node)}}' "
+            f"path='{{util:collection-name($node) || '/' || util:document-name($node)}}'>"
+            f"{{$node}}</pyexist-result>"
+        )
+        results_node = self.query(xq)
         resources = []
         for item in results_node.css_select("pyexist-result"):
             query_result = self._parse_item(item)
@@ -296,7 +325,6 @@ class ExistClient:
             else:
                 resource = NodeResource(exist_client=self, query_result=query_result)
             resources.append(resource)
-
         return resources
 
     def retrieve_resource(
@@ -343,24 +371,55 @@ class ExistClient:
                 return update replace $node with {updated_node}"""
             )
 
-    def delete_resource(
-        self, abs_resource_id: str, node_id: str = ""
+    def update_node(
+        self, updated_node: str, abs_resource_id: str, node_id: str
     ) -> None:
         """
-        Remove a database resource.
+        Replace a sub-document node with an updated version.
+
+        :param updated_node: The node to replace the old one with.
+        :param abs_resource_id: The absolute resource ID pointing to the document containing the node.
+        :param node_id: The node ID locating the node inside the containing document.
+        """
+        xq = (
+            f"update replace util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
+            f"with {updated_node}"
+        )
+        self.query(xq)
+
+    def update_document(
+        self, updated_node: str, path: str
+    ) -> None:
+        """
+        Replace a document root node with an updated version.
+
+        :param updated_node: The node to replace the old one with.
+        :param path: The path pointing to the document (relative to the REST endpoint, e. g. '/db/foo/bar')
+        """
+        url = self._join_paths(self.base_url, "rest", path)
+        self._put_request(url, updated_node)
+
+    def delete_node(
+            self, abs_resource_id: str, node_id: str = ""
+    ) -> None:
+        """
+        Remove a node from the database.
 
         :param abs_resource_id: The absolute resource ID pointing to the document.
         :param node_id: The node ID locating a node inside a document (optional).
         """
-        if node_id:
-            self.query(query_expression=f"""
-                let $node := util:node-by-id(
-                    util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')
-                return update delete $node"""
-            )
-        else:
-            self.query(
-                query_expression=f"""
-                let $node := util:get-resource-by-absolute-id({abs_resource_id})
-                return update delete $node"""
-            )
+        xq = (
+             f"let $node := util:node-by-id("
+             f"util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
+             f"return update delete $node"
+        )
+        self.query(xq)
+
+    def delete_document(self, path: str) -> None:
+        """
+        Remove a document from a database.
+
+        :param path: The path pointing to the document (relative to the REST endpoint, e. g. '/db/foo/bar')
+        """
+        url = self._join_paths(self.base_url, "rest", path)
+        self._delete_request(url)
