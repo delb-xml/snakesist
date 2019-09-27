@@ -208,8 +208,7 @@ class ExistClient:
             params=params
         )
 
-        if response.status_code != requests.codes.ok:
-            response.raise_for_status()
+        response.raise_for_status()
 
         return response.content
 
