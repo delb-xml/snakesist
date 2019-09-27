@@ -74,10 +74,16 @@ class Resource(ABC):
 
     @abstractmethod
     def update_push(self):
+        """
+        Write the resource object to the database.
+        """
         pass
 
     @abstractmethod
     def delete(self):
+        """
+        Remove the node from the database.
+        """
         pass
 
     @property
@@ -118,17 +124,11 @@ class DocumentResource(Resource):
             )
 
     def delete(self):
-        """
-        Remove the document from the database.
-        """
         self._exist_client.delete_document(path=self.path)
         self._node_id = None
         self._abs_resource_id = None
 
     def update_push(self):
-        """
-        Write the resource object to the database.
-        """
         self._exist_client.update_document(
             updated_node=str(self.node),
             path=self.path,
@@ -141,9 +141,6 @@ class NodeResource(Resource):
     """
 
     def delete(self):
-        """
-        Remove the node from the database.
-        """
         self._exist_client.delete_node(
             abs_resource_id=self._abs_resource_id, node_id=self._node_id
         )
@@ -151,9 +148,6 @@ class NodeResource(Resource):
         self._abs_resource_id = None
 
     def update_push(self):
-        """
-        Write the resource object to the database.
-        """
         self._exist_client.update_node(
             updated_node=str(self.node),
             abs_resource_id=self._abs_resource_id,
