@@ -136,7 +136,7 @@ class DocumentResource(Resource):
 
     def update_push(self):
         self._exist_client.update_document(
-            updated_node=str(self.node),
+            data=str(self.node),
             document_path=self.document_path,
         )
 
@@ -155,7 +155,7 @@ class NodeResource(Resource):
 
     def update_push(self):
         self._exist_client.update_node(
-            updated_node=str(self.node),
+            data=str(self.node),
             abs_resource_id=self._abs_resource_id,
             node_id=self._node_id,
         )
