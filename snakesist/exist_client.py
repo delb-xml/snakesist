@@ -18,7 +18,7 @@ from snakesist.errors import ExistAPIError
 
 QueryResultItem = NamedTuple(
     "QueryResultItem",
-    [("absolute_id", str), ("node_id", str), ("path", str), ("node", delb.TagNode)]
+    [("absolute_id", str), ("node_id", str), ("document_path", str), ("node", delb.TagNode)]
 )
 
 
@@ -53,11 +53,11 @@ class Resource(ABC):
         self._exist_client = exist_client
 
         if query_result:
-            self._abs_resource_id, self._node_id, self.path, self.node = query_result
+            self._abs_resource_id, self._node_id, self._document_path, self.node = query_result
         else:
             self._abs_resource_id = self._node_id = ""
             self.node = None
-            self.path = None
+            self._document_path = None
 
     def __str__(self):
         return str(self.node)
@@ -98,6 +98,13 @@ class Resource(ABC):
         """
         return self._node_id
 
+    @property
+    def document_path(self):
+        """
+        The node ID locating the node relative to the containing document.
+        """
+        return self._document_path
+
 
 class DocumentResource(Resource):
     """
@@ -122,14 +129,15 @@ class DocumentResource(Resource):
             )
 
     def delete(self):
-        self._exist_client.delete_document(path=self.path)
+        self._exist_client.delete_document(document_path=self.document_path)
         self._node_id = None
         self._abs_resource_id = None
+        self._document_path = None
 
     def update_push(self):
         self._exist_client.update_document(
             updated_node=str(self.node),
-            path=self.path,
+            document_path=self.document_path,
         )
 
 
@@ -288,15 +296,15 @@ class ExistClient:
         )
         return delb.Document(response_string, self.parser)
 
-    def create_resource(self, collection_path: str, node: str):
+    def create_resource(self, document_path: str, node: str):
         """
         Write a new document node to the database.
 
-        :param collection_path: Path to collection where document will be stored,
+        :param document_path: Path to collection where document will be stored,
                                 relative to the configured root collection
         :param node: XML string
         """
-        path = self._join_paths(self.root_collection, collection_path)
+        path = self._join_paths(self.root_collection, document_path)
         self.query(
             f"let $collection-check := if (not(xmldb:collection-available('{path}'))) "
             f"then (xmldb:create-collection('/', '{path}')) else () "
@@ -388,15 +396,15 @@ class ExistClient:
         )
 
     def update_document(
-        self, updated_node: str, path: str
+        self, updated_node: str, document_path: str
     ) -> None:
         """
         Replace a document root node with an updated version.
 
         :param updated_node: The node to replace the old one with.
-        :param path: The path pointing to the document (relative to the REST endpoint, e. g. '/db/foo/bar')
+        :param document_path: The path pointing to the document (relative to the REST endpoint, e. g. '/db/foo/bar')
         """
-        url = self._join_paths(self.base_url, "rest", path)
+        url = self._join_paths(self.base_url, "rest", document_path)
         self._put_request(url, updated_node)
 
     def delete_node(
@@ -414,11 +422,11 @@ class ExistClient:
              f"return update delete $node"
         )
 
-    def delete_document(self, path: str) -> None:
+    def delete_document(self, document_path: str) -> None:
         """
         Remove a document from a database.
 
-        :param path: The path pointing to the document (relative to the REST endpoint, e. g. '/db/foo/bar')
+        :param document_path: The path pointing to the document (relative to the REST endpoint, e. g. '/db/foo/bar')
         """
-        url = self._join_paths(self.base_url, "rest", path)
+        url = self._join_paths(self.base_url, "rest", document_path)
         self._delete_request(url)
