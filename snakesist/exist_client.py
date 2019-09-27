@@ -103,7 +103,7 @@ class DocumentResource(Resource):
         """
         Remove the document from the database.
         """
-        self._exist_client.delete_document(abs_resource_id=self._abs_resource_id)
+        self._exist_client.delete_document(path=self.path)
         self._node_id = None
         self._abs_resource_id = None
 
@@ -113,7 +113,7 @@ class DocumentResource(Resource):
         """
         self._exist_client.update_document(
             updated_node=str(self.node),
-            abs_resource_id=self._abs_resource_id,
+            path=self.path,
         )
 
 
@@ -218,7 +218,7 @@ class ExistClient:
             url,
             headers={"Content-Type": "application/xml"},
             auth=HTTPBasicAuth(self.user, self.password),
-            data=data
+            data=data.encode("utf-8")
         )
 
         if response.status_code != requests.codes.ok:
@@ -292,12 +292,17 @@ class ExistClient:
         """
         Write a new document node to the database.
 
-        :param collection_path: Collection where document will be stored
+        :param collection_path: Path to collection where document will be stored,
+                                relative to the configured root collection
         :param node: XML string
         """
-        path = self._join_paths(collection_path, uuid4().hex)
-        url = f"{self.root_collection_url}/{path}"
-        self._put_request(url, node)
+        path = self._join_paths(self.root_collection, collection_path)
+        xq = (
+            f"let $collection-check := if (not(xmldb:collection-available('{path}'))) "
+            f"then (xmldb:create-collection('/', '{path}')) else () "
+            f"return xmldb:store('/{path}', '{uuid4().hex}', {node})"
+        )
+        self.query(xq)
 
     def retrieve_resources(self, xpath: str) -> List[Resource]:
         """
@@ -346,7 +351,7 @@ class ExistClient:
             result_node = self.query(
                 query_expression=f"util:get-resource-by-absolute-id({abs_resource_id})"
             )
-        return result_node.xpath("./*")[0].detach()
+        return result_node.xpath("./*")[0].detach()  # TODO: Performance check?
 
     def update_resource(
         self, updated_node: str, abs_resource_id: str, node_id: str = ""

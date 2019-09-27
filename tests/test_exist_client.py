@@ -15,11 +15,11 @@ def db():
     db = ExistClient()
     db.root_collection = ROOT_COLL
     yield db
-    # requests.get(f"{BASE_URL}&_query=xmldb:remove('{ROOT_COLL}')")
+    requests.get(f"{BASE_URL}&_query=xmldb:remove('{ROOT_COLL}')")
 
 
 def test_exist_client_create_resource_wellformed(db):
-    new_node = '<example id="t1">wow a document node</example>'
+    new_node = '<example id="t1">wow a <foo>document</foo> node</example>'
     db.create_resource("/foo", new_node)
     response = requests.get(f"{BASE_URL}&_query=//example[@id='t1']")
     node = response.content.decode()
@@ -45,15 +45,16 @@ def test_exist_update_document(db):
 
 
 def test_exist_update_node(db):
-    new_node = '<example id="t3"><example id="t4">i am a child</example></example>'
-    updated_node = '<example id="t4">i am a child indeed</example>'
+    new_node = '<example id="t3">i am a <subnode>child</subnode></example>'
+    updated_node = '<subnode>child indeed</subnode>'
     db.create_resource("/foo", new_node)
-    xq = "let $node := //example[@id='t4'] return util:absolute-resource-id($node)"
+    xq = "let $node := //subnode return util:absolute-resource-id($node)"
     abs_res_id = requests.get(f"{BASE_URL}&_query={xq}").content.decode()
-    xq = "let $node := //example[@id='t4'] return util:node-id($node)"
+    xq = "let $node := //subnode return util:node-id($node)"
     node_id = requests.get(f"{BASE_URL}&_query={xq}").content.decode()
     db.update_node(updated_node, abs_res_id, node_id)
-    response = requests.get(f"{BASE_URL}&_query=//example[@id='t4']")
+    response = requests.get(f"{BASE_URL}&_query=//subnode")
     node = response.content.decode()
     assert node == updated_node
+
 
