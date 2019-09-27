@@ -247,7 +247,10 @@ class ExistClient:
     def _parse_item(node: delb.TagNode) -> QueryResultItem:
         content_node = node.first_child
         assert isinstance(content_node, delb.TagNode)
-        return node["absid"], node["nodeid"], node["path"], content_node.detach()
+        return QueryResultItem(
+            node["absid"], node["nodeid"],
+            node["path"], content_node.detach()
+        )
 
     @property
     def base_url(self) -> str:
