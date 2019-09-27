@@ -57,7 +57,7 @@ class Resource(ABC):
         else:
             self._abs_resource_id = self._node_id = ""
             self.node = None
-            self._document_path = None
+            self._document_path = ''
 
     def __str__(self):
         return str(self.node)
