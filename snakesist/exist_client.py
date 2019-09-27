@@ -359,31 +359,31 @@ class ExistClient:
         return result_node.xpath("./*")[0].detach()
 
     def update_node(
-        self, updated_node: str, abs_resource_id: str, node_id: str
+        self, data: str, abs_resource_id: str, node_id: str
     ) -> None:
         """
         Replace a sub-document node with an updated version.
 
-        :param updated_node: The node to replace the old one with.
+        :param data: A well-formed XML string containing the node to replace the old one with.
         :param abs_resource_id: The absolute resource ID pointing to the document containing the node.
         :param node_id: The node ID locating the node inside the containing document.
         """
         self.query(
             f"update replace util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
-            f"with {updated_node}"
+            f"with {data}"
         )
 
     def update_document(
-        self, updated_node: str, document_path: str
+        self, data: str, document_path: str
     ) -> None:
         """
         Replace a document root node with an updated version.
 
-        :param updated_node: The node to replace the old one with.
+        :param data: A well-formed XML string containing the node to replace the old one with.
         :param document_path: The path pointing to the document (relative to the REST endpoint, e. g. '/db/foo/bar')
         """
         url = self._join_paths(self.base_url, "rest", document_path)
-        self._put_request(url, updated_node)
+        self._put_request(url, data)
 
     def delete_node(
             self, abs_resource_id: str, node_id: str = ""
