@@ -184,7 +184,7 @@ class ExistClient:
             user: str = DEFAULT_USER,
             password: str = DEFAULT_PASSWORD,
             prefix: str = "exist",
-            parser:etree.XMLParser = DEFAULT_PARSER
+            parser: etree.XMLParser = DEFAULT_PARSER
     ):
         self._root_collection = "/"
         self.host = host
@@ -288,7 +288,6 @@ class ExistClient:
         Make a database query using XQuery
 
         :param query_expression: XQuery expression
-        :param parser: Parser used for processing XML
         :return: The query result as a ``delb.Document`` object.
         """
         response_string = self._get_request(
@@ -357,28 +356,7 @@ class ExistClient:
             result_node = self.query(
                 query_expression=f"util:get-resource-by-absolute-id({abs_resource_id})"
             )
-        return result_node.xpath("./*")[0].detach()  # TODO: Performance check?
-
-    def update_resource(
-        self, updated_node: str, abs_resource_id: str, node_id: str = ""
-    ) -> None:
-        """
-        Replace a database resource with an updated one.
-
-        :param abs_resource_id: The absolute resource ID pointing to the document.
-        :param node_id: The node ID locating a node inside a document (optional).
-        """
-        if node_id:
-            self.query(
-                f"let $node := util:node-by-id("
-                f"util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}') "
-                f"return update replace $node with {updated_node}"
-            )
-        else:
-            self.query(
-                f"let $node := util:get-resource-by-absolute-id({abs_resource_id}) "
-                f"return update replace $node with {updated_node}"
-            )
+        return result_node.xpath("./*")[0].detach()
 
     def update_node(
         self, updated_node: str, abs_resource_id: str, node_id: str
