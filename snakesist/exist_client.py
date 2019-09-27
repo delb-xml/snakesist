@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple
 
 import delb
 import requests
-from abc import ABC
+from abc import ABC, abstractmethod
 from lxml import etree  # type: ignore
 from uuid import uuid4
 from requests.auth import HTTPBasicAuth
@@ -71,6 +71,14 @@ class Resource(ABC):
         self.node = self._exist_client.retrieve_resource(
             abs_resource_id=self._abs_resource_id, node_id=self._node_id
         )
+
+    @abstractmethod
+    def update_push(self):
+        pass
+
+    @abstractmethod
+    def delete(self):
+        pass
 
     @property
     def abs_resource_id(self):
