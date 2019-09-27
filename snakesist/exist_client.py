@@ -193,12 +193,11 @@ class ExistClient:
         return "/".join(s.strip("/") for s in args)
 
     def _get_request(self, url: str, query: Optional[str] = None, wrap: bool = True) -> bytes:
-        if wrap:
-            wrap_value = "yes"
-        else:
-            wrap_value = "no"
         if query:
-            params = {"_howmany": "0", "_indent": "no", "_wrap": wrap_value, "_query": query}
+            params = {
+                "_howmany": "0", "_indent": "no",
+                "_wrap": "yes" if wrap else "no", "_query": query
+            }
         else:
             params = {}
 
