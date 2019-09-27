@@ -3,17 +3,15 @@
     :synopsis: A module containing basic tools for connecting to eXist.
 """
 
+from abc import ABC, abstractmethod
+from typing import List, Optional, NamedTuple
 from urllib.parse import urljoin
-from typing import List, Optional, Tuple
+from uuid import uuid4
 
 import delb
 import requests
-from abc import ABC, abstractmethod
 from lxml import etree  # type: ignore
-from uuid import uuid4
 from requests.auth import HTTPBasicAuth
-from typing import NamedTuple
-from requests.exceptions import HTTPError
 
 from snakesist.errors import ExistAPIError
 
