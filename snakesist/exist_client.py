@@ -12,12 +12,16 @@ from abc import ABC
 from lxml import etree  # type: ignore
 from uuid import uuid4
 from requests.auth import HTTPBasicAuth
+from typing import NamedTuple
 from requests.exceptions import HTTPError
 
 from snakesist.errors import ExistAPIError
 
 
-QueryResultItem = Tuple[str, str, str, delb.TagNode]
+QueryResultItem = NamedTuple(
+    "QueryResultItem",
+    [("absolute_id", str), ("node_id", str), ("path", str), ("node", delb.TagNode)]
+)
 
 
 DEFAULT_HOST = "localhost"
@@ -325,7 +329,7 @@ class ExistClient:
         resources = []
         for item in results_node.css_select("pyexist-result"):
             query_result = self._parse_item(item)
-            if query_result[1] == "1":
+            if query_result.node_id == "1":
                 resource = DocumentResource(exist_client=self, query_result=query_result)
             else:
                 resource = NodeResource(exist_client=self, query_result=query_result)
