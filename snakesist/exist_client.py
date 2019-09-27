@@ -110,23 +110,6 @@ class DocumentResource(Resource):
     """
     A representation of an eXist document node
     """
-    def __init__(
-            self,
-            exist_client: "ExistClient",
-            query_result: Optional[QueryResultItem] = None
-    ):
-        """
-        :param exist_client: The client to which the resource is coupled.
-        :query_result: A tuple containing the absolute resource ID, node ID
-                       and the node of the resource.
-        """
-        if query_result.node_id == "1":
-            super().__init__(exist_client, query_result)
-        else:
-            raise ValueError(
-                f"Invalid value of node_id {query_result.node_id}. "
-                f"On document nodes this value can only be '1'."
-            )
 
     def delete(self):
         self._exist_client.delete_document(document_path=self.document_path)
