@@ -323,11 +323,11 @@ class ExistClient:
         resources = []
         for item in results_node.css_select("pyexist-result"):
             query_result = self._parse_item(item)
-            if query_result.node_id == "1":
-                resource = DocumentResource(exist_client=self, query_result=query_result)
-            else:
-                resource = NodeResource(exist_client=self, query_result=query_result)
-            resources.append(resource)
+            resources.append(
+                DocumentResource(exist_client=self, query_result=query_result)
+                if query_result.node_id == "1"
+                else NodeResource(exist_client=self, query_result=query_result)
+            )
         return resources
 
     def retrieve_resource(
