@@ -297,12 +297,11 @@ class ExistClient:
         :param node: XML string
         """
         path = self._join_paths(self.root_collection, collection_path)
-        xq = (
+        self.query(
             f"let $collection-check := if (not(xmldb:collection-available('{path}'))) "
             f"then (xmldb:create-collection('/', '{path}')) else () "
             f"return xmldb:store('/{path}', '{uuid4().hex}', {node})"
         )
-        self.query(xq)
 
     def retrieve_resources(self, xpath: str) -> List[Resource]:
         """
@@ -313,7 +312,7 @@ class ExistClient:
                       instance supports via its RESTful API)
         :return: The query results as a list of :class:`Resource` objects.
         """
-        xq = (
+        results_node = self.query(
             f"for $node in {xpath} "
             f"return <pyexist-result "
             f"nodeid='{{util:node-id($node)}}' " 
@@ -321,7 +320,6 @@ class ExistClient:
             f"path='{{util:collection-name($node) || '/' || util:document-name($node)}}'>"
             f"{{$node}}</pyexist-result>"
         )
-        results_node = self.query(xq)
         resources = []
         for item in results_node.css_select("pyexist-result"):
             query_result = self._parse_item(item)
@@ -364,16 +362,14 @@ class ExistClient:
         """
         if node_id:
             self.query(
-                query_expression=f"""
-                let $node := util:node-by-id(
-                util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')
-                return update replace $node with {updated_node}"""
+                f"let $node := util:node-by-id("
+                f"util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}') "
+                f"return update replace $node with {updated_node}"
             )
         else:
             self.query(
-                query_expression=f"""
-                let $node := util:get-resource-by-absolute-id({abs_resource_id})
-                return update replace $node with {updated_node}"""
+                f"let $node := util:get-resource-by-absolute-id({abs_resource_id}) "
+                f"return update replace $node with {updated_node}"
             )
 
     def update_node(
@@ -386,11 +382,10 @@ class ExistClient:
         :param abs_resource_id: The absolute resource ID pointing to the document containing the node.
         :param node_id: The node ID locating the node inside the containing document.
         """
-        xq = (
+        self.query(
             f"update replace util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
             f"with {updated_node}"
         )
-        self.query(xq)
 
     def update_document(
         self, updated_node: str, path: str
@@ -413,12 +408,11 @@ class ExistClient:
         :param abs_resource_id: The absolute resource ID pointing to the document.
         :param node_id: The node ID locating a node inside a document (optional).
         """
-        xq = (
+        self.query(
              f"let $node := util:node-by-id("
              f"util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
              f"return update delete $node"
         )
-        self.query(xq)
 
     def delete_document(self, path: str) -> None:
         """
