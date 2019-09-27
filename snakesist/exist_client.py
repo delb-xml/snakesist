@@ -109,7 +109,13 @@ class DocumentResource(Resource):
         :query_result: A tuple containing the absolute resource ID, node ID
                        and the node of the resource.
         """
-        super().__init__(exist_client, query_result)
+        if query_result.node_id == "1":
+            super().__init__(exist_client, query_result)
+        else:
+            raise ValueError(
+                f"Invalid value of node_id {query_result.node_id}. "
+                f"On document nodes this value can only be '1'."
+            )
 
     def delete(self):
         """
@@ -133,17 +139,6 @@ class NodeResource(Resource):
     """
     A representation of an eXist node at the sub-document level
     """
-    def __init__(
-            self,
-            exist_client: "ExistClient",
-            query_result: Optional[QueryResultItem] = None
-    ):
-        """
-        :param exist_client: The client to which the resource is coupled.
-        :query_result: A tuple containing the absolute resource ID, node ID
-                       and the node of the resource.
-        """
-        super().__init__(exist_client, query_result)
 
     def delete(self):
         """
