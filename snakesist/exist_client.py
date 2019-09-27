@@ -113,9 +113,9 @@ class DocumentResource(Resource):
 
     def delete(self):
         self._exist_client.delete_document(document_path=self.document_path)
-        self._node_id = None
-        self._abs_resource_id = None
-        self._document_path = None
+        self._node_id = ""
+        self._abs_resource_id = ""
+        self._document_path = ""
 
     def update_push(self):
         self._exist_client.update_document(
@@ -133,8 +133,8 @@ class NodeResource(Resource):
         self._exist_client.delete_node(
             abs_resource_id=self._abs_resource_id, node_id=self._node_id
         )
-        self._node_id = None
-        self._abs_resource_id = None
+        self._node_id = ""
+        self._abs_resource_id = ""
 
     def update_push(self):
         self._exist_client.update_node(
