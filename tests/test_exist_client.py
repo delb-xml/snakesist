@@ -58,3 +58,26 @@ def test_exist_update_node(db):
     assert node == updated_node
 
 
+def test_exist_delete_node(db):
+    new_node = '<example id="t4">i stay<deletee> and i am to be deleted</deletee></example>'
+    remaining_node = '<example id="t4">i stay</example>'
+    db.create_resource("/foo", new_node)
+    xq = "let $node := //deletee return util:absolute-resource-id($node)"
+    abs_res_id = requests.get(f"{BASE_URL}&_query={xq}").content.decode()
+    xq = "let $node := //deletee return util:node-id($node)"
+    node_id = requests.get(f"{BASE_URL}&_query={xq}").content.decode()
+    db.delete_node(abs_res_id, node_id)
+    response = requests.get(f"{BASE_URL}&_query=//example[@id='t4']")
+    node = response.content.decode()
+    assert node == remaining_node
+
+
+def test_exist_delete_document(db):
+    new_node = '<example id="t5">i am to be deleted</example>'
+    db.create_resource("/foo", new_node)
+    xq = "let $node := //example[@id='t5'] return util:collection-name($node) || '/' || util:document-name($node)"
+    path = requests.get(f"{BASE_URL}&_query={xq}").content.decode()
+    db.delete_document(path)
+    response = requests.get(f"{BASE_URL}&_query=//example[@id='t5']")
+    node = response.content.decode()
+    assert node == ""
