@@ -16,8 +16,7 @@ snakesist
 
 
 ``snakesist`` is a Python database interface for `eXist-db <https://exist-db.org>`_.
-It supports creating, retrieving, updating and deleting and uses
-`delb <https://delb.readthedocs.io>`_ for representing the yielded resources.
+It supports basic CRUD operations and uses `delb <https://delb.readthedocs.io>`_ for representing the yielded resources.
 
 .. code-block:: shell
 
