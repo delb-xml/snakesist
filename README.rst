@@ -1,3 +1,6 @@
+.. image:: https://i.ibb.co/JsZqM7z/snakesist-logo.png
+    :target: https://snakesist.readthedocs.io
+
 snakesist
 =========
 
