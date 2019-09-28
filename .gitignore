@@ -1,6 +1,7 @@
 dist/
 .mypy_cache/
 .vscode/
+.idea/
 docs/_*
 docs/make.bat
 **.egg-info/
