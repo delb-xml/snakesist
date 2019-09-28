@@ -48,7 +48,7 @@ class Resource(ABC):
         :query_result: A tuple containing the absolute resource ID, node ID
                        and the node of the resource.
         """
-        self.node: Optional[delb.TagNode]
+        self.node: Optional[delb.NodeBase]
 
         self._exist_client = exist_client
 
