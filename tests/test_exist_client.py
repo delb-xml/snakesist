@@ -81,3 +81,12 @@ def test_exist_delete_document(db):
     response = requests.get(f"{BASE_URL}&_query=//example[@id='t5']")
     node = response.content.decode()
     assert node == ""
+
+
+def test_exist_retrieve_resource(db):
+    new_node = '<example id="t6">retrieve me!</example>'
+    db.create_resource("/foo", new_node)
+    xq = "let $node := //example[@id='t6'] return util:absolute-resource-id($node)"
+    abs_id = requests.get(f"{BASE_URL}&_query={xq}").content.decode()
+    retrieved_node = db.retrieve_resource(abs_resource_id=abs_id)
+    assert new_node == str(retrieved_node)

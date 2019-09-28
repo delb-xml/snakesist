@@ -18,7 +18,7 @@ from snakesist.errors import ExistAPIError
 
 QueryResultItem = NamedTuple(
     "QueryResultItem",
-    [("absolute_id", str), ("node_id", str), ("document_path", str), ("node", delb.TagNode)]
+    [("absolute_id", str), ("node_id", str), ("document_path", str), ("node", delb.NodeBase)]
 )
 
 
@@ -330,16 +330,32 @@ class ExistClient:
         :param node_id: The node ID locating a node inside a document (optional).
         :return: The queried node as a ``delb.TagNode`` object.
         """
+        path = self.query(
+            f"let $node := util:get-resource-by-absolute-id({abs_resource_id})"
+            f"return util:collection-name($node) || '/' || util:document-name($node)"
+        ).root.full_text
         if node_id:
-            result_node = self.query(
-                query_expression=f"""util:node-by-id(
-                    util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"""
+            return NodeResource(
+                self, QueryResultItem(
+                    abs_resource_id,
+                    node_id,
+                    path,
+                    self.query(
+                        f"util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
+                    ).root.first_child.detach()
+                )
             )
         else:
-            result_node = self.query(
-                query_expression=f"util:get-resource-by-absolute-id({abs_resource_id})"
+            return DocumentResource(
+                self, QueryResultItem(
+                    abs_resource_id,
+                    node_id,
+                    path,
+                    self.query(
+                        f"util:get-resource-by-absolute-id({abs_resource_id})"
+                    ).root.first_child.detach()
+                )
             )
-        return result_node.xpath("./*")[0].detach()
 
     def update_node(
         self, data: str, abs_resource_id: str, node_id: str
