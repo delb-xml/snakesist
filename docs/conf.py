@@ -22,7 +22,7 @@ copyright = '2019, Theo Costea'
 author = 'Theo Costea'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.0-beta1'
+release = '0.1.0'
 
 master_doc = 'index'
 
