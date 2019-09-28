@@ -101,7 +101,7 @@ class Resource(ABC):
     @property
     def document_path(self):
         """
-        The node ID locating the node relative to the containing document.
+        The resource path pointing to the document.
         """
         return self._document_path
 
