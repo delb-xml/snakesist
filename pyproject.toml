@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "snakesist"
-version = "0.1.0-beta1"
-description = "A Python database connector for eXist-db"
-# TOOD license
-authors = ["Theodor Costea <theo.costea@gmail.com>"]
+version = "0.1.0"
+description = "A Python database interface for eXist-db"
+license = "MIT"
+authors = ["Theodor Costea <theo.costea@gmail.com>", "Frank Sachsenheim <funkyfuture@riseup.net>"]
 readme = "README.rst"
 repository = "https://github.com/03b8/snakesist"
 classifiers = [

@@ -8,8 +8,13 @@ snakesist
     :target: https://snakesist.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-``snakesist`` is an experimental Python database driver for `eXist-db <https://exist-db.org>`_.
-It supports creating, retrieving, updating and deleting resources.
+.. image:: https://travis-ci.org/03b8/snakesist.svg?branch=master
+    :target: https://travis-ci.org/03b8/snakesist
+
+
+``snakesist`` is a Python database interface for `eXist-db <https://exist-db.org>`_.
+It supports creating, retrieving, updating and deleting and uses
+`delb <https://delb.readthedocs.io>`_ for representing the yielded resources.
 
 .. code-block:: shell
 
@@ -21,8 +26,7 @@ Usage example
 
 .. code-block:: python
 
-    import delb
-    from snakesist.exist_client import ExistClient
+    from snakesist import ExistClient
 
     db = ExistClient(
         host='my.existdbinstance.org',  # defaults to 'localhost'
@@ -37,6 +41,7 @@ Usage example
     names = db.retrieve_resources('//*:persName')
     # note the namespace wildcard in the XPath expression
 
+    # append 'Python' to all names which are 'Monty' and delete the rest
     for name in names:
         if name.node.full_text == 'Monty':
             name.node.append_child(' Python')
@@ -51,18 +56,8 @@ Your eXist instance
 ``snakesist`` leverages the
 `eXist RESTful API <https://www.exist-db.org/exist/apps/doc/devguide_rest.xml>`_
 for database queries. This means that allowing database queries using the
-``_query=`` parameter of the RESTful API is a requirement in the used exist-db
+``_query`` parameter of the RESTful API is a requirement in the used eXist-db
 backend. eXist allows this by default, so if you haven't configured your
 instance otherwise, don't worry about it.
 
-
-Stability
----------
-
-This package doesn't have a stable release yet and lacks sufficient test coverage.
-Please use with care. It also has `delb <https://delb.readthedocs.io/en/latest/>`_
-as a dependency (for representing the yielded resources), which is a very young
-project developed as a proof of concept at the moment.
-
-Contributions, suggestions, bug reports and feature requests for ``snakesist``
-are more than welcome.
+``snakesist`` is tested with eXist 4.7.1 and is not compatible yet with eXist 5.0.0.

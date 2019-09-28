@@ -1,7 +1,7 @@
 import pytest
 import requests
 from requests.exceptions import HTTPError
-from snakesist.exist_client import ExistClient
+from snakesist import ExistClient
 
 ROOT_COLL = "/db/tests"
 BASE_URL = f"http://admin:@localhost:8080/exist/rest{ROOT_COLL}?_wrap=no&_indent=no"
