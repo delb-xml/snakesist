@@ -4,7 +4,7 @@ API Documentation
 Database Client
 ---------------
 
-.. autoclass:: snakesist.exist_client.ExistClient
+.. autoclass:: snakesist.ExistClient
     :members:
     :undoc-members:
     :show-inheritance:
@@ -12,12 +12,12 @@ Database Client
 Resources
 ---------
 
-.. autoclass:: snakesist.exist_client.DocumentResource
+.. autoclass:: snakesist.DocumentResource
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: snakesist.exist_client.NodeResource
+.. autoclass:: snakesist.NodeResource
     :members:
     :undoc-members:
     :show-inheritance:
