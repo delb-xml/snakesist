@@ -328,7 +328,7 @@ class ExistClient:
 
         :param abs_resource_id: The absolute resource ID pointing to the document.
         :param node_id: The node ID locating a node inside a document (optional).
-        :return: The queried node as a ``delb.TagNode`` object.
+        :return: The queried node as a ``Resource`` object.
         """
         path = self.query(
             f"let $node := util:get-resource-by-absolute-id({abs_resource_id})"
