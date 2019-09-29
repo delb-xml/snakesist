@@ -13,7 +13,8 @@
 from pkg_resources import get_distribution
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+cwd = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.abspath(os.path.join(cwd, '../')))
 
 
 # -- Project information -----------------------------------------------------
