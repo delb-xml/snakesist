@@ -12,7 +12,3 @@ python:
       path: .
     - requirements: docs/requirements.txt
 
-sphinx:
-  builder: html
-  configuration: conf.py
-  fail_on_warning: true
