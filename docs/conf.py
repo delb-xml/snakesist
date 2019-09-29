@@ -14,7 +14,7 @@ from pkg_resources import get_distribution
 import os
 import sys
 cwd = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.abspath(os.path.join(cwd, '../')))
+sys.path.insert(0, os.path.abspath(os.path.join(cwd, '../snakesist')))
 
 
 # -- Project information -----------------------------------------------------
@@ -24,7 +24,7 @@ copyright = '2019, Theo Costea'
 author = 'Theo Costea'
 
 # The full version, including alpha/beta/rc tags
-release = get_distribution('snakesist')
+release = get_distribution('snakesist').version
 version = ''
 
 master_doc = 'index'
