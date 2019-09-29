@@ -11,10 +11,9 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 from pkg_resources import get_distribution
-import os
-import sys
-cwd = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.abspath(os.path.join(cwd, '../snakesist')))
+# import os
+# import sys
+# sys.path.insert(0, os.path.abspath('.'))
 
 
 # -- Project information -----------------------------------------------------
