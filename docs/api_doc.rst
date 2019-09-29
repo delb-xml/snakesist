@@ -4,11 +4,11 @@ API Documentation
 Database Client
 ---------------
 
-.. autoclass:: snakesist.exist_client.ExistClient
+.. autoclass:: snakesist.ExistClient
 
 Resources
 ---------
 
-.. autoclass:: snakesist.exist_client.DocumentResource
+.. autoclass:: snakesist.DocumentResource
 
-.. autoclass:: snakesist.exist_client.NodeResource
+.. autoclass:: snakesist.NodeResource
