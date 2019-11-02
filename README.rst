@@ -30,12 +30,7 @@ Usage example
 
     from snakesist import ExistClient
 
-    db = ExistClient(
-        host='my.existdbinstance.org',  # defaults to 'localhost'
-        port='80',  # defaults to 8080
-        user='foo_bar',  # defaults to 'admin'
-        passwordw='f0ob4r'  # defaults to ''
-    )
+    db = ExistClient()
 
     db.root_collection = '/db/foo/bar'
     # the client will only query from this point downwards
