@@ -230,7 +230,7 @@ class ExistClient:
         assert isinstance(content_node, delb.TagNode)
         return QueryResultItem(
             node["absid"], node["nodeid"],
-            node["path"], content_node.detach()
+            node["path"], content_node
         )
 
     @property
