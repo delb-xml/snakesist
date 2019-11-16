@@ -89,7 +89,7 @@ def test_exist_client_retrieve_resource(db):
     xq = "let $node := //example[@id='t6'] return util:absolute-resource-id($node)"
     abs_id = requests.get(f"{BASE_URL}&_query={xq}").content.decode()
     retrieved_node = db.retrieve_resource(abs_resource_id=abs_id)
-    assert new_node == str(retrieved_node)
+    assert new_node == str(retrieved_node.root)
 
 
 def test_exist_client_retrieve_resources(db):
@@ -99,6 +99,6 @@ def test_exist_client_retrieve_resources(db):
     document_resource = '<p>retrieve me too!</p>'
     db.create_resource("/foo", document_resource)
     retrieved_nodes = db.retrieve_resources("//p")
-    retrieved_nodes_str = [str(node) for node in retrieved_nodes]
+    retrieved_nodes_str = [str(node.root) for node in retrieved_nodes]
     assert node_resource in retrieved_nodes_str
     assert document_resource in retrieved_nodes_str

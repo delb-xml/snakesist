@@ -72,11 +72,12 @@ description = "A library that provides an ergonomic model for XML encoded text d
 name = "delb"
 optional = false
 python-versions = ">=3.6"
-version = "0.1.2"
+version = "0.2.dev2"
 
 [package.dependencies]
 cssselect = "*"
 lxml = "*"
+pluggy = ">=0.13.0,<0.14.0"
 
 [[package]]
 category = "dev"
@@ -103,7 +104,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "1.1.0"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Read metadata from Python packages"
 marker = "python_version < \"3.8\""
 name = "importlib-metadata"
@@ -142,7 +143,7 @@ python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*"
 version = "1.1.1"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "More routines for operating on iterables, beyond itertools"
 name = "more-itertools"
 optional = false
@@ -183,7 +184,7 @@ pyparsing = ">=2.0.2"
 six = "*"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "plugin and hook calling mechanisms for python"
 name = "pluggy"
 optional = false
@@ -397,7 +398,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4"
 version = "1.25.6"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 marker = "python_version < \"3.8\""
 name = "zipp"
@@ -409,7 +410,7 @@ version = "0.6.0"
 more-itertools = "*"
 
 [metadata]
-content-hash = "fdceba6e6cc10579265e344c0ff858b0200205897223c754918357e9886ebd77"
+content-hash = "07fc5387b15e76b4bf26d51b3c6bec4b26002814d25bd7cf16a372c252e904d9"
 python-versions = "^3.6"
 
 [metadata.hashes]
@@ -421,7 +422,7 @@ certifi = ["e4f3620cfea4f83eedc95b24abd9cd56f3c4b146dd0177e83a21b4eb49e21e50", "
 chardet = ["84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae", "fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"]
 colorama = ["05eed71e2e327246ad6b38c540c4a3117230b19679b875190486ddd2d721422d", "f8ac84de7840f5b9c4e3347b3c1eaa50f7e49c2b07596221daec5edaabbd7c48"]
 cssselect = ["f612ee47b749c877ebae5bb77035d8f4202c6ad0f0fc1271b3c18ad6c4468ecf", "f95f8dedd925fd8f54edb3d2dfb44c190d9d18512377d3c1e2388d16126879bc"]
-delb = ["2f208f4d4a47195fd11bf102149601a6ac757ce11b5c2e18a4e551341e32ce3d", "63c124757f0eba7d12b99d71caf0f6cea8bd73331e52a77249764b7e7f92b8b9"]
+delb = ["8cd36a0cc6061b1b08c3ad602e3cef28e20f1cb1f12f29d68a85cf223aebb101", "abac7dcd447d8cedb8cbd4a51debbdbfbb5f5a37db59504e966b18f274107fc0"]
 docutils = ["6c4f696463b79f1fb8ba0c594b63840ebd41f059e92b31957c46b74a4599b6d0", "9e4d7ecfc600058e07ba661411a2b7de2fd0fafa17d1a7f7361cd47b1175c827", "a2aeea129088da402665e92e0b25b04b073c04b2dce4ab65caaa38b7ce2e1a99"]
 idna = ["c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407", "ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"]
 imagesize = ["3f349de3eb99145973fefb7dbe38554414e5c30abd0c8e4b970a7c9d09f3a1d8", "f3832918bc3c66617f92e35f5d70729187676313caa60c187eb0f28b8fe5e3b5"]
