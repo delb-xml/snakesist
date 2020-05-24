@@ -4,7 +4,6 @@ services:
 python:
     - "3.6"
 before_install:
-<<<<<<< HEAD
     - travis_retry docker pull existdb/existdb:4.7.1
     - docker run -d -p 8080:8080 -p 8443:8443 --name exist-4.7.1 existdb/existdb:4.7.1
 install:
