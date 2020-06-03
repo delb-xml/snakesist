@@ -335,25 +335,32 @@ class ExistClient:
             f"return util:collection-name($node) || '/' || util:document-name($node)"
         ).root.full_text
         if node_id:
+            response_document = self.query(
+                "util:node-by-id(util:get-resource-by-absolute-id"
+                f"({abs_resource_id}), '{node_id}')"
+            )
+            queried_document = response_document.root.first_child
+            assert queried_document is not None
             return NodeResource(
                 self, QueryResultItem(
                     abs_resource_id,
                     node_id,
                     path,
-                    self.query(
-                        f"util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
-                    ).root.first_child.detach()
+                    queried_document.detach()
                 )
             )
         else:
+            response_document = self.query(
+                f"util:get-resource-by-absolute-id({abs_resource_id})"
+            )
+            queried_document = response_document.root.first_child
+            assert queried_document is not None
             return DocumentResource(
                 self, QueryResultItem(
                     abs_resource_id,
                     node_id,
                     path,
-                    self.query(
-                        f"util:get-resource-by-absolute-id({abs_resource_id})"
-                    ).root.first_child.detach()
+                    queried_document.detach()
                 )
             )
 
