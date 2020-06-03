@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore
 import requests
 from requests.exceptions import HTTPError
 
