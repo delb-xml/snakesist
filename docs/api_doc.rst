@@ -10,6 +10,6 @@ Database Client
 Resources
 ---------
 
-.. autoclass:: snakesist.DocumentResource
+.. autoclass:: snakesist.delb_plugins.ExistDBExtension
 
 .. autoclass:: snakesist.NodeResource

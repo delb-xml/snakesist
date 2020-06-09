@@ -15,6 +15,9 @@ classifiers = [
 ]
 keywords = ["xml", "exist-db", "client"]
 
+[tool.poetry.plugins.delb]
+snakesist = "snakesist.delb_plugins"
+
 [tool.poetry.dependencies]
 python = "^3.6"
 delb = "^0.2b3"
