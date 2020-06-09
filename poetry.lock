@@ -76,12 +76,13 @@ category = "main"
 description = "A library that provides an ergonomic model for XML encoded text documents (e.g. with TEI-XML)."
 name = "delb"
 optional = false
-python-versions = ">=3.6"
-version = "0.1.2"
+python-versions = ">=3.6,<4.0"
+version = "0.2b3"
 
 [package.dependencies]
 cssselect = "*"
 lxml = "*"
+setuptools = "*"
 
 [package.extras]
 https-loader = ["requests (>=2.21,<3.0)"]
@@ -190,7 +191,7 @@ dmypy = ["psutil (>=4.0)"]
 [[package]]
 category = "dev"
 description = "Experimental type system extensions for programs checked with the mypy typechecker."
-marker = "python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8.0b1\" or python_version >= \"3.8.0b1\")"
+marker = "python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8\" or python_version >= \"3.8\")"
 name = "mypy-extensions"
 optional = false
 python-versions = "*"
@@ -440,7 +441,7 @@ test = ["pytest", "flake8", "mypy"]
 [[package]]
 category = "dev"
 description = "a fork of Python 2 and 3 ast modules with type comment support"
-marker = "python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8.0b1\" or python_version >= \"3.8.0b1\")"
+marker = "python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8\" or python_version >= \"3.8\")"
 name = "typed-ast"
 optional = false
 python-versions = "*"
@@ -449,7 +450,7 @@ version = "1.4.0"
 [[package]]
 category = "dev"
 description = "Type Hints for Python"
-marker = "python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8.0b1\" or python_version >= \"3.8.0b1\")"
+marker = "python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8\" or python_version >= \"3.8\") and (python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8.0b1\" or python_version >= \"3.8.0b1\"))"
 name = "typing"
 optional = false
 python-versions = "*"
@@ -458,7 +459,7 @@ version = "3.7.4.1"
 [[package]]
 category = "dev"
 description = "Backported and Experimental Type Hints for Python 3.5+"
-marker = "python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8.0b1\" or python_version >= \"3.8.0b1\")"
+marker = "python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8\" or python_version >= \"3.8\")"
 name = "typing-extensions"
 optional = false
 python-versions = "*"
@@ -497,7 +498,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "5e286b53328772d54ffb100ca1aa2a29974e312b6ec624b3882a8589dac64ca0"
+content-hash = "7198d0cf9f070bf3d2177323efc7c86f71fd40dfbef844c4a69cbee238bdcc11"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -534,8 +535,8 @@ cssselect = [
     {file = "cssselect-1.1.0.tar.gz", hash = "sha256:f95f8dedd925fd8f54edb3d2dfb44c190d9d18512377d3c1e2388d16126879bc"},
 ]
 delb = [
-    {file = "delb-0.1.2-py3-none-any.whl", hash = "sha256:2f208f4d4a47195fd11bf102149601a6ac757ce11b5c2e18a4e551341e32ce3d"},
-    {file = "delb-0.1.2.tar.gz", hash = "sha256:63c124757f0eba7d12b99d71caf0f6cea8bd73331e52a77249764b7e7f92b8b9"},
+    {file = "delb-0.2b3-py3-none-any.whl", hash = "sha256:c44fafb860f64da45131cec73158fbfaa75e27dcc34cdee96550bb5e94b3660c"},
+    {file = "delb-0.2b3.tar.gz", hash = "sha256:7bf03ab3ac9d3eff03c7a8501de867d3543013f04c2b7b9ece966a2a5d144bf1"},
 ]
 docutils = [
     {file = "docutils-0.15.2-py2-none-any.whl", hash = "sha256:9e4d7ecfc600058e07ba661411a2b7de2fd0fafa17d1a7f7361cd47b1175c827"},
