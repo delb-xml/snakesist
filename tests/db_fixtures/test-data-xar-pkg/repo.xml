@@ -1,0 +1,5 @@
+<meta xmlns="http://exist-db.org/xquery/repo">
+    <type>library</type>
+    <target>test-data</target>
+    <deployed/>
+</meta>

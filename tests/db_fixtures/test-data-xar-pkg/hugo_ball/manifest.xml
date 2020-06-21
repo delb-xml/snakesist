@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns:jxb="http://java.sun.com/xml/ns/jaxb" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns="http://www.tei-c.org/ns/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tns="http://textgrid.info/namespaces/metadata/core/2010" xmlns:tgl="http://textgrid.info/namespaces/metadata/language/2010" xmlns:tgs="http://textgrid.info/namespaces/metadata/script/2010" xmlns:tgr="http://textgrid.info/namespaces/metadata/agent/2010" xml:id="tg91" n="/Literatur/M/Ball, Hugo/Schriften/Das erste dadaistische Manifest">
+   <teiHeader xmlns:fn="http://www.w3.org/2005/xpath-functions" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:a="http://www.textgrid.info/namespace/digibib/authors">
+      <fileDesc>
+         <titleStmt>
+            <title>Das erste dadaistische Manifest</title>
+         </titleStmt>
+         <publicationStmt>
+            <idno type="handle">hdl:11858/00-1734-0000-0006-AA42-0</idno><idno type="TextGridUri">textgrid:1265r.0</idno><availability>
+               
+               <p> Der annotierte Datenbestand der Digitalen Bibliothek inklusive Metadaten sowie
+                                   davon einzeln zugängliche Teile sind eine Abwandlung des Datenbestandes von
+                                   www.editura.de durch TextGrid und werden unter der Lizenz Creative Commons
+                                   Namensnennung 3.0 Deutschland Lizenz (by-Nennung TextGrid) veröffentlicht. Die
+                                   Lizenz bezieht sich nicht auf die der Annotation zu Grunde liegenden
+                                   allgemeinfreien Texte (Siehe auch Punkt 2 der Lizenzbestimmungen). </p>
+               <p>
+                  <ref target="http://creativecommons.org/licenses/by/3.0/de/legalcode">Lizenzvertrag</ref>
+               </p>
+               <p>
+                  <ref target="http://creativecommons.org/licenses/by/3.0/de/"> Eine vereinfachte
+                                   Zusammenfassung des rechtsverbindlichen Lizenzvertrages in
+                                   allgemeinverständlicher Sprache </ref>
+               </p>
+               <p>
+                  <ref target="http://www.textgrid.de/Digitale-Bibliothek">Hinweise zur Lizenz und zur Digitalen Bibliothek</ref>
+               </p>
+            </availability>
+         </publicationStmt>
+         <notesStmt>
+            <note>
+                              Das Manifest wurde beim ersten öffentlichen Dada-Abend am 14.7.1916 im Zunfthaus an der Waag in Zürich vorgetragen. Erstdruck mit abweichenden Lesarten in: Paul Pörtner: Literatur-Revolution. Neuwied (Luchterhand) 1960/61.
+                           </note>
+         </notesStmt>
+         <sourceDesc>
+            <biblFull>
+               <titleStmt>
+                  <title>Hugo Ball: Der Künstler und die Zeitkrankheit. Ausgewählte Schriften, Frankfurt a.M.: Suhrkamp, 1984.</title>
+                  <author key="pnd:118506234">Ball, Hugo</author>
+               </titleStmt>
+               <extent>39-</extent>
+               <publicationStmt>
+                  <date when="1984"/>
+                  <pubPlace>Frankfurt a.M.</pubPlace>
+               </publicationStmt>
+            </biblFull>
+         </sourceDesc>
+      </fileDesc>
+      <profileDesc>
+         <creation>
+            <date notBefore="1886" notAfter="1927"/>
+         </creation>
+         <textClass>
+            <keywords scheme="http://textgrid.info/namespaces/metadata/core/2010#genre">
+               <term>other</term>
+            </keywords>
+         </textClass>
+      </profileDesc>
+   </teiHeader>
+            <text>
+               <body>
+                     
+                        
+                     
+                     
+                     
+                     <div type="text" xml:id="tg91.3">
+
+
+
+                        <div type="h3">
+                           <head type="h3" xml:id="tg91.3.1">Hugo Ball</head>
+
+
+                           <head type="h2" xml:id="tg91.3.2">Das erste dadaistische Manifest</head>
+
+
+                           <p xml:id="tg91.3.3">Dada ist eine neue Kunstrichtung. Das kann man daran erkennen, daß bisher niemand etwas davon wußte und morgen ganz Zürich davon reden wird. Dada stammt aus dem Lexikon. Es ist furchtbar einfach. Im Französischen bedeutet's Steckenpferd. Im Deutschen heißt's Addio, steigts mir den Rücken runter. Auf Wiedersehen ein andermal! Im Rumänischen: »Ja wahrhaftig, Sie haben recht, so ist's. Jawohl, wirklich, machen wir.« Und so weiter.</p>
+                           <p rend="zenoPLm4n0" xml:id="tg91.3.4">Ein internationales Wort. Nur ein Wort und das Wort als Bewegung. Sehr leicht zu verstehen. Es ist ganz furchtbar einfach. Wenn man eine Kunstrichtung daraus macht, muß das bedeuten, man will Komplikationen wegnehmen. Dada Psychologie, Dada Deutschland samt Indigestionen und Nebelkrämpfen, Dada Literatur, Dada Bourgeoisie, und ihr, verehrteste Dichter, die ihr immer mit Worten, aber nie das Wort selber gedichtet habt, die ihr um den nackten Punkt herumdichtet. Dada Weltkrieg und kein Ende, Dada Revolution und kein Anfang, Dada ihr Freunde und Auchdichter, allerwerteste, Manufakturisten und Evangelisten Dada Tzara, Dada Huelsenbeck, Dada m'dada, Dada m'dada Dada mhm, dada dera dada Dada Hue, Dada Tza.</p>
+                           <p rend="zenoPLm4n0" xml:id="tg91.3.5">Wie erlangt man die ewige Seligkeit? Indem man Dada sagt. Wie wird man berühmt? Indem man Dada sagt. Mit edlem Gestus und mit feinem Anstand. Bis zum Irrsinn. Bis zur Bewußtlosigkeit. Wie kann man alles Journalige, Aalige, alles Nette und Adrette, Bornierte, Vermoralisierte, Europäisierte, Enervierte, abtun? Indem man Dada sagt. Dada ist die Weltseele, Dada ist der Clou. Dada ist die beste Lilienmilchseife der Welt. Dada Herr Rubiner, Dada Herr Korrodi. Dada Herr Anastasius Lilienstein.</p>
+                           <p rend="zenoPLm4n0" xml:id="tg91.3.6">Das heißt auf Deutsch: Die Gastfreundschaft der Schweiz ist über alles zu schätzen. Und im Ästhetischen kommt es auf die Qualität an.</p>
+                           <p rend="zenoPLm4n0" xml:id="tg91.3.7">Ich lese Verse, die nichts weniger vorhaben als: auf die <pb n="39" xml:id="tg91.3.7.1"/>
+konventionelle Sprache zu verzichten, ad acta zu legen. Dada Johann Fuchsgang Goethe. Dada Stendhal. Dada Dalai Lama, Buddha, Bibel und Nietzsche. Dada m'dada. Dada mhm dada da. Auf die Verbindung kommt es an, und daß sie vorher ein bißchen unterbrochen wird. Ich will keine Worte, die andere erfunden haben. Alle Worte haben andre erfunden. Ich will meinen eigenen Unfug, meinen eigenen Rhythmus und Vokale und Konsonanten dazu, die ihm entsprechen, die von mir selbst sind. Wenn diese Schwingung sieben Ellen lang ist, will ich füglich Worte dazu, die sieben Ellen lang sind. Die Worte des Herrn Schulze haben nur zweieinhalb Zentimeter.</p>
+                           <p rend="zenoPLm4n0" xml:id="tg91.3.8">Da kann man nun so recht sehen, wie die artikulierte Sprache entsteht. Ich lasse die Vokale kobolzen. Ich lasse die Laute ganz einfach fallen, etwa wie eine Katze miaut... Worte tauchen auf, Schultern von Worten, Beine, Arme, Hände von Worten. Au, oi, uh. Man soll nicht zu viel Worte aufkommen lassen. Ein Vers ist die Gelegenheit, allen Schmutz abzutun. Ich wollte die Sprache hier selber fallen lassen. Diese vermaledeite Sprache, an der Schmutz klebt, wie von Maklerhänden, die die Münzen abgegriffen haben. Das Wort will ich haben, wo es aufhört und wo es anfängt. Dada ist das Herz der Worte.</p>
+                           <p rend="zenoPLm4n0" xml:id="tg91.3.9">Jede Sache hat ihr Wort, aber das Wort ist eine Sache für sich geworden. Warum soll ich es nicht finden? Warum kann der Baum nicht »Pluplusch« heißen? und »Pluplubasch«, wenn es geregnet hat? Das Wort, das Wort, das Wort außerhalb eurer Sphäre, eurer Stickluft, dieser lächerlichen Impotenz, eurer stupenden Selbstzufriedenheit, außerhalb dieser Nachrednerschaft, eurer offensichtlichen Beschränktheit. Das Wort, meine Herren, das Wort ist eine öffentliche Angelegenheit ersten Ranges.</p>
+                           <pb n="40" xml:id="tg91.3.10"/>
+                        </div>
+                     </div>
+                  </body>
+            </text>
+         </TEI>
