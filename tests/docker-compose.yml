@@ -1,6 +1,0 @@
-version: '2'
-services:
-  existdb:
-    image: "existdb/existdb:4.7.1"
-    ports:
-      - "8080:8080"

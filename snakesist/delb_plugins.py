@@ -41,7 +41,6 @@ class ExistDBExtension(DocumentExtensionHooks):
     """
 
     def _init_config(self, config_args: Dict[str, Any]):
-        raise NotImplemented
         super()._init_config(config_args)
 
     @property
