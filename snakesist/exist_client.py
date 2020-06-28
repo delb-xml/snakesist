@@ -238,7 +238,10 @@ class ExistClient:
         """
         The base URL pointing to the eXist instance.
         """
-        return f"http://{self.host}:{self.port}/{self.prefix}/"
+        return (
+            f"http://{self.user}:{self.password}@{self.host}:{self.port}"
+            f"/{self.prefix}"
+        )
 
     @property
     def root_collection(self) -> str:
