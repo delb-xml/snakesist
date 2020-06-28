@@ -207,6 +207,14 @@ class ExistClient:
         self.parser = parser
         self._root_collection = root_collection
 
+    @classmethod
+    def from_url(cls, url: str) -> "ExistClient":
+        """
+        Returns a client instance from the given URL. Path parts that point to something
+        beyond the database instance's path prefix are ignored.
+        """
+        raise NotImplemented
+
     @staticmethod
     def _join_paths(*args):
         return "/".join(s.strip("/") for s in args)

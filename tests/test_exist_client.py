@@ -2,6 +2,8 @@ import pytest  # type: ignore
 import requests
 from requests.exceptions import HTTPError
 
+from snakesist import ExistClient
+
 
 def test_exist_client_create_resource_wellformed(rest_base_url, test_client):
     new_node = '<example id="t1">wow a <foo>document</foo> node</example>'
@@ -89,3 +91,27 @@ def test_exist_client_retrieve_resources(test_client):
     retrieved_nodes_str = [str(node) for node in retrieved_nodes]
     assert node_resource in retrieved_nodes_str
     assert document_resource in retrieved_nodes_str
+
+
+@pytest.mark.usefixtures("db")
+@pytest.mark.parametrize(
+    "url, properties",
+    (
+        ("existdb://hostname/", ("https", "", "", "hostname", 443, "/")),
+        ("existdb+https://hostname/", ("https", "", "", "hostname", 443, "/")),
+        ("existdb+http://hostname/", ("http", "", "", "hostname", 80, "/")),
+        ("existdb+http://hostname:8080/", ("http", "", "", "hostname", 8080, "/")),
+        (
+            "existdb://user:pass@hostname/exist",
+            ("https", "user", "pass", "hostname", 80, "/exist"),
+        ),
+    ),
+)
+def test_url_parsing(url, properties):
+    client = ExistClient.from_url(url)
+    assert client.transport == properties[0]
+    assert client.user == properties[1]
+    assert client.password == properties[2]
+    assert client.host == properties[3]
+    assert client.port == properties[4]
+    assert client.prefix == properties[5]
