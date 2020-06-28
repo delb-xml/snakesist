@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import requests
-from pytest import fixture
+from pytest import fixture  # type: ignore
 
 from snakesist import ExistClient
 

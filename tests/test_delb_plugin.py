@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore
 
 from delb import Document, FailedDocumentLoading
 from snakesist import ExistClient
