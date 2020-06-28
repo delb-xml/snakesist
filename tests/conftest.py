@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import requests
 from pytest import fixture
 
@@ -36,7 +38,7 @@ def db(docker_ip, docker_services):
 
 @fixture(scope="session")
 def docker_compose_file(pytestconfig):
-    return str(pytestconfig.rootdir / "db_fixture" / "docker-compose.yml")
+    return str(Path(__file__).parent.resolve() / "db_fixture" / "docker-compose.yml")
 
 
 @fixture
