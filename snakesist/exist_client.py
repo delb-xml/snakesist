@@ -13,8 +13,6 @@ import requests
 from lxml import etree  # type: ignore
 from requests.auth import HTTPBasicAuth
 
-from snakesist.errors import ExistAPIError
-
 
 QueryResultItem = NamedTuple(
     "QueryResultItem",
