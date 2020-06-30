@@ -230,7 +230,7 @@ class ExistClient:
             url,
             headers={"Content-Type": "application/xml"},
             auth=HTTPBasicAuth(
-                self.__connection_props.user, self.__connection_props.password
+                self.user, self.password
             ),
             params=params,
         )
@@ -244,7 +244,7 @@ class ExistClient:
             url,
             headers={"Content-Type": "application/xml"},
             auth=HTTPBasicAuth(
-                self.__connection_props.user, self.__connection_props.password
+                self.user, self.password
             ),
             data=data.encode("utf-8"),
         )
@@ -259,7 +259,7 @@ class ExistClient:
             url,
             headers={"Content-Type": "application/xml"},
             auth=HTTPBasicAuth(
-                self.__connection_props.user, self.__connection_props.password
+                self.user, self.password
             ),
         )
 
