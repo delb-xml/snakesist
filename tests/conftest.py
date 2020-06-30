@@ -8,7 +8,6 @@ from snakesist import ExistClient
 
 @fixture
 def rest_base_url(test_client):
-    test_client.root_collection = "/db/tests"
     return (
         f"{test_client.base_url}rest{test_client.root_collection}?_wrap=no&_indent=no"
     )
@@ -45,6 +44,11 @@ def docker_compose_file(pytestconfig):
 def test_client(db):
     host, port = db[len("http://") :].split(":")
     client = ExistClient(
-        host=host, port=int(port), prefix="exist/", user="admin", password="",
+        host=host,
+        port=int(port),
+        prefix="exist/",
+        user="admin",
+        password="",
+        root_collection="/db/tests",
     )
     yield client

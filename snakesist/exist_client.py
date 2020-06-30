@@ -21,6 +21,15 @@ class QueryResultItem(NamedTuple):
     node: NodeBase
 
 
+class ConnectionProps(NamedTuple):
+    root_collection: str
+    host: str
+    port: int
+    user: str
+    password: str
+    prefix: str
+
+
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 8080
 DEFAULT_USER = "admin"
@@ -47,9 +56,9 @@ class Resource(ABC):
     """
 
     def __init__(
-            self,
-            exist_client: "ExistClient",
-            query_result: Optional[QueryResultItem] = None
+        self,
+        exist_client: "ExistClient",
+        query_result: Optional[QueryResultItem] = None,
     ):
         """
         :param exist_client: The client to which the resource is coupled.
@@ -61,11 +70,16 @@ class Resource(ABC):
         self._exist_client = exist_client
 
         if query_result:
-            self._abs_resource_id, self._node_id, self._document_path, self.node = query_result
+            (
+                self._abs_resource_id,
+                self._node_id,
+                self._document_path,
+                self.node,
+            ) = query_result
         else:
             self._abs_resource_id = self._node_id = ""
             self.node = None
-            self._document_path = ''
+            self._document_path = ""
 
     def __str__(self):
         return str(self.node)
@@ -127,8 +141,7 @@ class DocumentResource(Resource):
 
     def update_push(self):
         self._exist_client.update_document(
-            data=str(self.node),
-            document_path=self.document_path,
+            data=str(self.node), document_path=self.document_path,
         )
 
 
@@ -170,25 +183,29 @@ class ExistClient:
     """
 
     def __init__(
-            self,
-            host: str = DEFAULT_HOST,
-            port: int = DEFAULT_PORT,
-            user: str = DEFAULT_USER,
-            password: str = DEFAULT_PASSWORD,
-            prefix: str = "exist",
-            root_collection: str = "/",
-            parser: etree.XMLParser = DEFAULT_PARSER
-
+        self,
+        host: str = DEFAULT_HOST,
+        port: int = DEFAULT_PORT,
+        user: str = DEFAULT_USER,
+        password: str = DEFAULT_PASSWORD,
+        prefix: str = "exist",
+        root_collection: str = "/",
+        parser: etree.XMLParser = DEFAULT_PARSER,
     ):
-        self._root_collection = root_collection
-        self._host = host
-        self._port = port
-        self._user = user
-        self._password = password
-        self._prefix = prefix
+        self.__connection_props = ConnectionProps(
+            root_collection=root_collection,
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            prefix=prefix,
+        )
         self._base_url = (
-            f"http://{self._user}:{self._password}@{self._host}:{self._port}"
-            f"/{self._prefix}"
+            f"http://{self.__connection_props.user}"
+            f":{self.__connection_props.password}"
+            f"@{self.__connection_props.host}"
+            f":{self.__connection_props.port}"
+            f"/{self.__connection_props.prefix}"
         )
         self.parser = parser
 
@@ -196,11 +213,15 @@ class ExistClient:
     def _join_paths(*args):
         return "/".join(s.strip("/") for s in args)
 
-    def _get_request(self, url: str, query: Optional[str] = None, wrap: bool = True) -> bytes:
+    def _get_request(
+        self, url: str, query: Optional[str] = None, wrap: bool = True
+    ) -> bytes:
         if query:
             params = {
-                "_howmany": "0", "_indent": "no",
-                "_wrap": "yes" if wrap else "no", "_query": query
+                "_howmany": "0",
+                "_indent": "no",
+                "_wrap": "yes" if wrap else "no",
+                "_query": query,
             }
         else:
             params = {}
@@ -208,8 +229,10 @@ class ExistClient:
         response = requests.get(
             url,
             headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self._user, self._password),
-            params=params
+            auth=HTTPBasicAuth(
+                self.__connection_props.user, self.__connection_props.password
+            ),
+            params=params,
         )
 
         response.raise_for_status()
@@ -220,8 +243,10 @@ class ExistClient:
         response = requests.put(
             url,
             headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self._user, self._password),
-            data=data.encode("utf-8")
+            auth=HTTPBasicAuth(
+                self.__connection_props.user, self.__connection_props.password
+            ),
+            data=data.encode("utf-8"),
         )
 
         if response.status_code != requests.codes.ok:
@@ -233,7 +258,9 @@ class ExistClient:
         response = requests.delete(
             url,
             headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self._user, self._password),
+            auth=HTTPBasicAuth(
+                self.__connection_props.user, self.__connection_props.password
+            ),
         )
 
         if response.status_code != requests.codes.ok:
@@ -242,8 +269,10 @@ class ExistClient:
     @staticmethod
     def _parse_item(node: etree._Element) -> QueryResultItem:
         return QueryResultItem(
-            node.attrib["absid"], node.attrib["nodeid"],
-            node.attrib["path"], TagNode(node[0], {})
+            node.attrib["absid"],
+            node.attrib["nodeid"],
+            node.attrib["path"],
+            TagNode(node[0], {}),
         )
 
     @property
@@ -258,42 +287,42 @@ class ExistClient:
         """
         The database hostname
         """
-        return self._host
+        return self.__connection_props.host
 
     @property
     def port(self):
         """
         The database port number
         """
-        return self._port
+        return self.__connection_props.port
 
     @property
     def user(self):
         """
         The user name used to connect to the database
         """
-        return self._user
+        return self.__connection_props.user
 
     @property
     def password(self):
         """
         The password used to connect to the database
         """
-        return self._password
+        return self.__connection_props.password
 
     @property
     def prefix(self):
         """
         The URL prefix of the database
         """
-        return self._prefix
+        return self.__connection_props.prefix
 
     @property
     def root_collection(self) -> str:
         """
         The configured root collection for database queries.
         """
-        return self._root_collection
+        return self.__connection_props.root_collection
 
     @root_collection.setter
     def root_collection(self, collection: str):
@@ -302,7 +331,7 @@ class ExistClient:
         queries (e. g. '/db/foo/bar/').
         """
 
-        self._root_collection = collection
+        self.__connection_props.root_collection = collection
 
     @property
     def root_collection_url(self):
@@ -353,7 +382,7 @@ class ExistClient:
         results_node = self.query(
             f"for $node in {xpath} "
             f"return <snakesist:result xmlns:snakesist='{XML_NAMESPACE}'"
-            f"nodeid='{{util:node-id($node)}}' " 
+            f"nodeid='{{util:node-id($node)}}' "
             f"absid='{{util:absolute-resource-id($node)}}' "
             f"path='{{util:collection-name($node) || '/' || util:document-name($node)}}'>"
             f"{{$node}}</snakesist:result>"
@@ -368,9 +397,7 @@ class ExistClient:
             )
         return resources
 
-    def retrieve_resource(
-        self, abs_resource_id: str, node_id: str = ""
-    ) -> Resource:
+    def retrieve_resource(self, abs_resource_id: str, node_id: str = "") -> Resource:
         """
         Retrieve a single resource by its internal database IDs.
 
@@ -378,10 +405,12 @@ class ExistClient:
         :param node_id: The node ID locating a node inside a document (optional).
         :return: The queried node as a ``Resource`` object.
         """
-        path = fetch_resource_paths(self.query(
-            f"let $node := util:get-resource-by-absolute-id({abs_resource_id})"
-            f"return util:collection-name($node) || '/' || util:document-name($node)"
-        ))[0].text
+        path = fetch_resource_paths(
+            self.query(
+                f"let $node := util:get-resource-by-absolute-id({abs_resource_id})"
+                f"return util:collection-name($node) || '/' || util:document-name($node)"
+            )
+        )[0].text
         assert isinstance(path, str), path
 
         if node_id:
@@ -395,17 +424,11 @@ class ExistClient:
         assert isinstance(queried_node, etree._Element)
 
         return DocumentResource(
-            self, QueryResultItem(
-                abs_resource_id,
-                node_id,
-                path,
-                TagNode(queried_node, {})
-            )
+            self,
+            QueryResultItem(abs_resource_id, node_id, path, TagNode(queried_node, {})),
         )
 
-    def update_node(
-        self, data: str, abs_resource_id: str, node_id: str
-    ) -> None:
+    def update_node(self, data: str, abs_resource_id: str, node_id: str) -> None:
         """
         Replace a sub-document node with an updated version.
 
@@ -418,9 +441,7 @@ class ExistClient:
             f"with {data}"
         )
 
-    def update_document(
-        self, data: str, document_path: str
-    ) -> None:
+    def update_document(self, data: str, document_path: str) -> None:
         """
         Replace a document root node with an updated version.
 
@@ -430,9 +451,7 @@ class ExistClient:
         url = self._join_paths(self.base_url, "rest", document_path)
         self._put_request(url, data)
 
-    def delete_node(
-            self, abs_resource_id: str, node_id: str = ""
-    ) -> None:
+    def delete_node(self, abs_resource_id: str, node_id: str = "") -> None:
         """
         Remove a node from the database.
 
@@ -440,9 +459,9 @@ class ExistClient:
         :param node_id: The node ID locating a node inside a document (optional).
         """
         self.query(
-             f"let $node := util:node-by-id("
-             f"util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
-             f"return update delete $node"
+            f"let $node := util:node-by-id("
+            f"util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
+            f"return update delete $node"
         )
 
     def delete_document(self, document_path: str) -> None:
