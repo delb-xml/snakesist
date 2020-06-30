@@ -181,11 +181,15 @@ class ExistClient:
 
     ):
         self._root_collection = root_collection
-        self.host = host
-        self.port = port
-        self.user = user
-        self.password = password
-        self.prefix = prefix
+        self._host = host
+        self._port = port
+        self._user = user
+        self._password = password
+        self._prefix = prefix
+        self._base_url = (
+            f"http://{self._user}:{self._password}@{self._host}:{self._port}"
+            f"/{self._prefix}"
+        )
         self.parser = parser
 
     @staticmethod
@@ -204,7 +208,7 @@ class ExistClient:
         response = requests.get(
             url,
             headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self.user, self.password),
+            auth=HTTPBasicAuth(self._user, self._password),
             params=params
         )
 
@@ -216,7 +220,7 @@ class ExistClient:
         response = requests.put(
             url,
             headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self.user, self.password),
+            auth=HTTPBasicAuth(self._user, self._password),
             data=data.encode("utf-8")
         )
 
@@ -229,7 +233,7 @@ class ExistClient:
         response = requests.delete(
             url,
             headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self.user, self.password),
+            auth=HTTPBasicAuth(self._user, self._password),
         )
 
         if response.status_code != requests.codes.ok:
@@ -247,10 +251,42 @@ class ExistClient:
         """
         The base URL pointing to the eXist instance.
         """
-        return (
-            f"http://{self.user}:{self.password}@{self.host}:{self.port}"
-            f"/{self.prefix}"
-        )
+        return self._base_url
+
+    @property
+    def host(self):
+        """
+        The database hostname
+        """
+        return self._host
+
+    @property
+    def port(self):
+        """
+        The database port number
+        """
+        return self._port
+
+    @property
+    def user(self):
+        """
+        The user name used to connect to the database
+        """
+        return self._user
+
+    @property
+    def password(self):
+        """
+        The password used to connect to the database
+        """
+        return self._password
+
+    @property
+    def prefix(self):
+        """
+        The URL prefix of the database
+        """
+        return self._prefix
 
     @property
     def root_collection(self) -> str:
