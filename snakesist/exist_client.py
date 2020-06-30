@@ -165,6 +165,7 @@ class ExistClient:
     :param user: username
     :param password: password
     :param prefix: configured path prefix for the eXist instance
+    :param root_collection: a path to a collection which will be used as root for all document paths
     :param parser: an lxml etree.XMLParser instance to parse query results
     """
 
@@ -175,9 +176,11 @@ class ExistClient:
             user: str = DEFAULT_USER,
             password: str = DEFAULT_PASSWORD,
             prefix: str = "exist",
+            root_collection: str = "/",
             parser: etree.XMLParser = DEFAULT_PARSER
+
     ):
-        self._root_collection = "/"
+        self._root_collection = root_collection
         self.host = host
         self.port = port
         self.user = user
