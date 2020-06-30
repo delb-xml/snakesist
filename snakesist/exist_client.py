@@ -229,9 +229,7 @@ class ExistClient:
         response = requests.get(
             url,
             headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(
-                self.user, self.password
-            ),
+            auth=HTTPBasicAuth(self.user, self.password),
             params=params,
         )
 
@@ -243,9 +241,7 @@ class ExistClient:
         response = requests.put(
             url,
             headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(
-                self.user, self.password
-            ),
+            auth=HTTPBasicAuth(self.user, self.password),
             data=data.encode("utf-8"),
         )
 
@@ -258,9 +254,7 @@ class ExistClient:
         response = requests.delete(
             url,
             headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(
-                self.user, self.password
-            ),
+            auth=HTTPBasicAuth(self.user, self.password),
         )
 
         if response.status_code != requests.codes.ok:
