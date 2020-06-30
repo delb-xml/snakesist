@@ -8,18 +8,17 @@ from typing import List, Optional, NamedTuple
 from urllib.parse import urljoin
 from uuid import uuid4
 
-import delb
 import requests
-from lxml import etree  # type: ignore
+from delb.nodes import NodeBase, TagNode
+from lxml import cssselect, etree  # type: ignore
 from requests.auth import HTTPBasicAuth
 
-from snakesist.errors import ExistAPIError
 
-
-QueryResultItem = NamedTuple(
-    "QueryResultItem",
-    [("absolute_id", str), ("node_id", str), ("document_path", str), ("node", delb.NodeBase)]
-)
+class QueryResultItem(NamedTuple):
+    absolute_id: str
+    node_id: str
+    document_path: str
+    node: NodeBase
 
 
 DEFAULT_HOST = "localhost"
@@ -27,6 +26,15 @@ DEFAULT_PORT = 8080
 DEFAULT_USER = "admin"
 DEFAULT_PASSWORD = ""
 DEFAULT_PARSER = etree.XMLParser(recover=True)
+XML_NAMESPACE = "https://snakesist.readthedocs.io/"
+
+
+fetch_resource_paths = cssselect.CSSSelector(
+    "x|result x|value", namespaces={"x": "http://exist.sourceforge.net/NS/exist"}
+)
+fetch_snakesist_results = cssselect.CSSSelector(
+    "x|result", namespaces={"x": XML_NAMESPACE}
+)
 
 
 class Resource(ABC):
@@ -48,7 +56,7 @@ class Resource(ABC):
         :query_result: A tuple containing the absolute resource ID, node ID
                        and the node of the resource.
         """
-        self.node: Optional[delb.NodeBase]
+        self.node: Optional[NodeBase]
 
         self._exist_client = exist_client
 
@@ -225,12 +233,10 @@ class ExistClient:
             response.raise_for_status()
 
     @staticmethod
-    def _parse_item(node: delb.TagNode) -> QueryResultItem:
-        content_node = node.first_child
-        assert isinstance(content_node, delb.TagNode)
+    def _parse_item(node: etree._Element) -> QueryResultItem:
         return QueryResultItem(
-            node["absid"], node["nodeid"],
-            node["path"], content_node
+            node.attrib["absid"], node.attrib["nodeid"],
+            node.attrib["path"], TagNode(node[0], {})
         )
 
     @property
@@ -269,7 +275,7 @@ class ExistClient:
         url = urljoin(self.base_url, data_path)
         return url
 
-    def query(self, query_expression: str) -> delb.Document:
+    def query(self, query_expression: str) -> etree._Element:
         """
         Make a database query using XQuery
 
@@ -279,7 +285,7 @@ class ExistClient:
         response_string = self._get_request(
             self.root_collection_url, query=query_expression
         )
-        return delb.Document(response_string, self.parser)
+        return etree.fromstring(response_string, parser=self.parser)
 
     def create_resource(self, document_path: str, node: str):
         """
@@ -307,14 +313,14 @@ class ExistClient:
         """
         results_node = self.query(
             f"for $node in {xpath} "
-            f"return <pyexist-result "
+            f"return <snakesist:result xmlns:snakesist='{XML_NAMESPACE}'"
             f"nodeid='{{util:node-id($node)}}' " 
             f"absid='{{util:absolute-resource-id($node)}}' "
             f"path='{{util:collection-name($node) || '/' || util:document-name($node)}}'>"
-            f"{{$node}}</pyexist-result>"
+            f"{{$node}}</snakesist:result>"
         )
         resources = []
-        for item in results_node.css_select("pyexist-result"):
+        for item in fetch_snakesist_results(results_node):
             query_result = self._parse_item(item)
             resources.append(
                 DocumentResource(exist_client=self, query_result=query_result)
@@ -333,39 +339,30 @@ class ExistClient:
         :param node_id: The node ID locating a node inside a document (optional).
         :return: The queried node as a ``Resource`` object.
         """
-        path = self.query(
+        path = fetch_resource_paths(self.query(
             f"let $node := util:get-resource-by-absolute-id({abs_resource_id})"
             f"return util:collection-name($node) || '/' || util:document-name($node)"
-        ).root.full_text
+        ))[0].text
+        assert isinstance(path, str), path
+
         if node_id:
-            response_document = self.query(
-                "util:node-by-id(util:get-resource-by-absolute-id"
-                f"({abs_resource_id}), '{node_id}')"
-            )
-            queried_document = response_document.root.first_child
-            assert queried_document is not None
-            return NodeResource(
-                self, QueryResultItem(
-                    abs_resource_id,
-                    node_id,
-                    path,
-                    queried_document.detach()
-                )
+            query = (
+                "util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), "
+                "'{node_id}')"
             )
         else:
-            response_document = self.query(
-                f"util:get-resource-by-absolute-id({abs_resource_id})"
+            query = f"util:get-resource-by-absolute-id({abs_resource_id})"
+        queried_node = self.query(query)[0]
+        assert isinstance(queried_node, etree._Element)
+
+        return DocumentResource(
+            self, QueryResultItem(
+                abs_resource_id,
+                node_id,
+                path,
+                TagNode(queried_node, {})
             )
-            queried_document = response_document.root.first_child
-            assert queried_document is not None
-            return DocumentResource(
-                self, QueryResultItem(
-                    abs_resource_id,
-                    node_id,
-                    path,
-                    queried_document.detach()
-                )
-            )
+        )
 
     def update_node(
         self, data: str, abs_resource_id: str, node_id: str
