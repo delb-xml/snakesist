@@ -22,11 +22,10 @@ class QueryResultItem(NamedTuple):
 
 
 class ConnectionProps(NamedTuple):
-    root_collection: str
-    host: str
-    port: int
     user: str
     password: str
+    host: str
+    port: int
     prefix: str
 
 
@@ -193,21 +192,18 @@ class ExistClient:
         parser: etree.XMLParser = DEFAULT_PARSER,
     ):
         self.__connection_props = ConnectionProps(
-            root_collection=root_collection,
-            host=host,
-            port=port,
             user=user,
             password=password,
+            host=host,
+            port=port,
             prefix=prefix,
         )
         self._base_url = (
-            f"http://{self.__connection_props.user}"
-            f":{self.__connection_props.password}"
-            f"@{self.__connection_props.host}"
-            f":{self.__connection_props.port}"
-            f"/{self.__connection_props.prefix}"
+            f"http://{self.user}:{self.password}"
+            f"@{self.host}:{self.port}/{self.prefix}"
         )
         self.parser = parser
+        self._root_collection = root_collection
 
     @staticmethod
     def _join_paths(*args):
@@ -316,7 +312,7 @@ class ExistClient:
         """
         The configured root collection for database queries.
         """
-        return self.__connection_props.root_collection
+        return self._root_collection
 
     @root_collection.setter
     def root_collection(self, collection: str):
@@ -325,7 +321,7 @@ class ExistClient:
         queries (e. g. '/db/foo/bar/').
         """
 
-        self.__connection_props.root_collection = collection
+        self._root_collection = collection
 
     @property
     def root_collection_url(self):
