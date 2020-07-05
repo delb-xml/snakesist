@@ -22,6 +22,7 @@ class QueryResultItem(NamedTuple):
 
 
 class ConnectionProps(NamedTuple):
+    transport: str
     user: str
     password: str
     host: str
@@ -29,6 +30,7 @@ class ConnectionProps(NamedTuple):
     prefix: str
 
 
+DEFAULT_TRANSPORT = "http"
 DEFAULT_HOST = "localhost"
 DEFAULT_PORT = 8080
 DEFAULT_USER = "admin"
@@ -177,12 +179,14 @@ class ExistClient:
     :param user: username
     :param password: password
     :param prefix: configured path prefix for the eXist instance
-    :param root_collection: a path to a collection which will be used as root for all document paths
+    :param root_collection: a path to a collection which will be used as root for all
+                            document paths
     :param parser: an lxml etree.XMLParser instance to parse query results
     """
 
     def __init__(
         self,
+        transport: str = DEFAULT_TRANSPORT,
         host: str = DEFAULT_HOST,
         port: int = DEFAULT_PORT,
         user: str = DEFAULT_USER,
@@ -192,16 +196,14 @@ class ExistClient:
         parser: etree.XMLParser = DEFAULT_PARSER,
     ):
         self.__connection_props = ConnectionProps(
+            transport=transport,
             user=user,
             password=password,
             host=host,
             port=port,
             prefix=prefix,
         )
-        self._base_url = (
-            f"http://{self.user}:{self.password}"
-            f"@{self.host}:{self.port}/{self.prefix}"
-        )
+        self.__base_url = f"{transport}://{user}:{password}@{host}:{port}/{prefix}"
         self.parser = parser
         self._root_collection = root_collection
 
@@ -270,7 +272,7 @@ class ExistClient:
         """
         The base URL pointing to the eXist instance.
         """
-        return self._base_url
+        return self.__base_url
 
     @property
     def host(self):
@@ -320,7 +322,6 @@ class ExistClient:
         Set the path to the root collection for database
         queries (e. g. '/db/foo/bar/').
         """
-
         self._root_collection = collection
 
     @property
@@ -328,7 +329,6 @@ class ExistClient:
         """
         The URL pointing to the configured root collection.
         """
-
         data_path = self._join_paths("/rest/", self.root_collection)
         url = urljoin(self.base_url, data_path)
         return url
