@@ -3,9 +3,11 @@
     :synopsis: A module containing basic tools for connecting to eXist.
 """
 
+import re
 from abc import ABC, abstractmethod
-from typing import List, Optional, NamedTuple
-from urllib.parse import urljoin
+from pathlib import PurePosixPath
+from typing import List, NamedTuple, Optional, Tuple
+from urllib.parse import urljoin, urlparse
 from uuid import uuid4
 
 import requests
@@ -36,15 +38,18 @@ DEFAULT_PORT = 8080
 DEFAULT_USER = "admin"
 DEFAULT_PASSWORD = ""
 DEFAULT_PARSER = etree.XMLParser(recover=True)
+EXISTDB_NAMESPACE = "http://exist.sourceforge.net/NS/exist"
+TRANSPORT_PROTOCOLS = {"https": 443, "http": 80}  # the order matters!
 XML_NAMESPACE = "https://snakesist.readthedocs.io/"
 
 
 fetch_resource_paths = cssselect.CSSSelector(
-    "x|result x|value", namespaces={"x": "http://exist.sourceforge.net/NS/exist"}
+    "x|result x|value", namespaces={"x": EXISTDB_NAMESPACE}
 )
 fetch_snakesist_results = cssselect.CSSSelector(
     "x|result", namespaces={"x": XML_NAMESPACE}
 )
+content_type_is_xml = re.compile(r"^(application|text)/xml(;.+)?").match
 
 
 class Resource(ABC):
@@ -207,6 +212,104 @@ class ExistClient:
         self.parser = parser
         self._root_collection = root_collection
 
+    @classmethod
+    def from_url(cls, url: str, parser=DEFAULT_PARSER) -> "ExistClient":
+        """
+        Returns a client instance from the given URL. Path parts that point to something
+        beyond the database instance's path prefix are ignored.
+        """
+        parsed_url = urlparse(url)
+
+        if parsed_url.scheme == "existdb":
+            transport = None
+        elif parsed_url.scheme.startswith("existdb+"):
+            transport = parsed_url.scheme.split("+")[1]
+            if transport not in TRANSPORT_PROTOCOLS:
+                raise ValueError(f"Invalid transport '{transport}' for existdb.")
+        else:
+            raise ValueError(f"Invalid URL scheme '{parsed_url.scheme}' for existdb.")
+
+        user = parsed_url.username or ""
+        password = parsed_url.password or ""
+        host = parsed_url.hostname
+        port = parsed_url.port
+
+        # to please mypy:
+        assert isinstance(host, str)
+
+        if transport is None:
+            probe_result = cls._probe_transport_and_port(
+                f"{user}:{password}@{host}", port
+            )
+            if probe_result is None:
+                raise RuntimeError(f"Couldn't figure out how to talk to {host}.")
+            transport, port = probe_result
+        elif port is None:
+            port = TRANSPORT_PROTOCOLS[transport]
+
+        prefix = cls._probe_instance_prefix(
+            f"{transport}://{user}:{password}@{host}:{port}", parsed_url.path
+        )
+        if prefix is None:
+            raise RuntimeError(
+                "Couldn't determine the location of the 'rest' interface."
+            )
+
+        return cls(
+            transport=transport,
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            prefix=prefix,
+            parser=parser,
+        )
+
+    @staticmethod
+    def _probe_transport_and_port(
+        host: str, port: Optional[int]
+    ) -> Optional[Tuple[str, int]]:
+        for transport, default_port in TRANSPORT_PROTOCOLS.items():
+            _port = port or default_port
+            try:
+                requests.head(f"{transport}://{host}:{_port}/")
+            except requests.exceptions.ConnectionError:
+                pass
+            else:
+                return transport, _port
+        return None
+
+    @staticmethod
+    def _probe_instance_prefix(base: str, path: str) -> Optional[str]:
+        path_parts = PurePosixPath(path).parts[1:]
+        encountered_collection = False
+
+        # looks for longest path as different instances could have overlapping prefixes
+        # will return false results if a path contained a part named "rest"
+        for i in range(len(path_parts), 0, -1):
+            response = requests.get(f"{base}/{'/'.join(path_parts[:i])}/rest/")
+
+            if not content_type_is_xml(response.headers.get("Content-Type", "")):
+                if encountered_collection:
+                    break
+                else:
+                    continue
+
+            content = etree.fromstring(response.content)
+            qualified_name = etree.QName(content)
+            if (
+                qualified_name.namespace == EXISTDB_NAMESPACE
+                and qualified_name.localname == "result"
+            ):
+                encountered_collection = True
+            elif encountered_collection:
+                break
+
+        if encountered_collection:
+            return "/".join(path_parts[:i])
+        else:
+            return None
+
     @staticmethod
     def _join_paths(*args):
         return "/".join(s.strip("/") for s in args)
@@ -273,6 +376,13 @@ class ExistClient:
         The base URL pointing to the eXist instance.
         """
         return self.__base_url
+
+    @property
+    def transport(self):
+        """
+        The used transport protocol
+        """
+        return self.__connection_props.transport
 
     @property
     def host(self):
