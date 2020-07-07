@@ -9,7 +9,7 @@ from urllib.parse import urljoin
 from uuid import uuid4
 
 import requests
-from delb.nodes import NodeBase, TagNode
+from _delb.nodes import NodeBase, TagNode
 from lxml import cssselect, etree  # type: ignore
 from requests.auth import HTTPBasicAuth
 

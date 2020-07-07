@@ -20,7 +20,7 @@ snakesist = "snakesist.delb_plugins"
 
 [tool.poetry.dependencies]
 python = "^3.6"
-delb = "^0.2b3"
+delb = "^0.2b4"
 requests = "^2.22"
 
 [tool.poetry.dev-dependencies]

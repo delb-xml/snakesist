@@ -130,7 +130,7 @@ description = "A library that provides an ergonomic model for XML encoded text d
 name = "delb"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "0.2b3"
+version = "0.2b4"
 
 [package.dependencies]
 cssselect = "*"
@@ -779,7 +779,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "432c670fee1cca8a941dc6a42d143d1442e10285c25f5b0a273fcc10dc5b4854"
+content-hash = "b567b82e3909315e66df50e90ed433b34717a8211871bca1a75fc8e657a98c08"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -891,8 +891,8 @@ cssselect = [
     {file = "cssselect-1.1.0.tar.gz", hash = "sha256:f95f8dedd925fd8f54edb3d2dfb44c190d9d18512377d3c1e2388d16126879bc"},
 ]
 delb = [
-    {file = "delb-0.2b3-py3-none-any.whl", hash = "sha256:c44fafb860f64da45131cec73158fbfaa75e27dcc34cdee96550bb5e94b3660c"},
-    {file = "delb-0.2b3.tar.gz", hash = "sha256:7bf03ab3ac9d3eff03c7a8501de867d3543013f04c2b7b9ece966a2a5d144bf1"},
+    {file = "delb-0.2b4-py3-none-any.whl", hash = "sha256:4038ee8dbb04c1a33b61dc6bf35a5efe110b0543ff04e95d2950281eefc314e6"},
+    {file = "delb-0.2b4.tar.gz", hash = "sha256:a7a6729c666e64f5ac61828492f9dc4cff707413e248d958d9e6692215a725bc"},
 ]
 distro = [
     {file = "distro-1.5.0-py2.py3-none-any.whl", hash = "sha256:df74eed763e18d10d0da624258524ae80486432cd17392d9c3d96f5e83cd2799"},

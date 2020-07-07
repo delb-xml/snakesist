@@ -1,8 +1,8 @@
 from types import SimpleNamespace
 from typing import Any, Dict
 
-from delb.plugins import plugin_manager, DocumentExtensionHooks
-from delb.typing import LoaderResult
+from _delb.plugins import plugin_manager, DocumentExtensionHooks
+from _delb.typing import LoaderResult
 
 
 @plugin_manager.register_loader()
