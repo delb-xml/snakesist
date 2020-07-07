@@ -24,10 +24,14 @@ def existdb_is_responsive(url):
 
 
 @fixture
-def db(docker_ip, docker_services):
+def db(docker_ip, docker_services, monkeypatch):
     """
     Database setup and teardown
     """
+    monkeypatch.setenv(
+        "REQUESTS_CA_BUNDLE",
+        str(Path(__file__).resolve().parent / "db_fixture" / "nginx" / "cert.pem"),
+    )
     base_url = f"http://{docker_ip}:{docker_services.port_for('existdb', 8080)}"
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.1, check=lambda: existdb_is_responsive(base_url)
@@ -36,7 +40,7 @@ def db(docker_ip, docker_services):
 
 
 @fixture(scope="session")
-def docker_compose_file(pytestconfig):
+def docker_compose_file():
     return str(Path(__file__).parent.resolve() / "db_fixture" / "docker-compose.yml")
 
 

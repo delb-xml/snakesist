@@ -97,13 +97,19 @@ def test_exist_client_retrieve_resources(test_client):
 @pytest.mark.parametrize(
     "url, properties",
     (
-        ("existdb://hostname/", ("https", "", "", "hostname", 443, "/")),
-        ("existdb+https://hostname/", ("https", "", "", "hostname", 443, "/")),
-        ("existdb+http://hostname/", ("http", "", "", "hostname", 80, "/")),
-        ("existdb+http://hostname:8080/", ("http", "", "", "hostname", 8080, "/")),
+        ("existdb://localhost/exist", ("https", "", "", "localhost", 443, "exist")),
         (
-            "existdb://user:pass@hostname/exist",
-            ("https", "user", "pass", "hostname", 80, "/exist"),
+            "existdb+https://localhost/exist",
+            ("https", "", "", "localhost", 443, "exist"),
+        ),
+        ("existdb+http://localhost/exist", ("http", "", "", "localhost", 80, "exist")),
+        (
+            "existdb+http://localhost:8080/exist",
+            ("http", "", "", "localhost", 8080, "exist"),
+        ),
+        (
+            "existdb://admin:@localhost/exist",
+            ("https", "admin", "", "localhost", 443, "exist"),
         ),
     ),
 )
