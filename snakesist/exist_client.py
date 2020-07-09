@@ -29,7 +29,7 @@ class ConnectionProps(NamedTuple):
     password: str
     host: str
     port: int
-    prefix: str
+    prefix: PurePosixPath
 
 
 DEFAULT_TRANSPORT = "http"
@@ -50,6 +50,10 @@ fetch_snakesist_results = cssselect.CSSSelector(
     "x|result", namespaces={"x": XML_NAMESPACE}
 )
 content_type_is_xml = re.compile(r"^(application|text)/xml(;.+)?").match
+
+
+def _mangle_path(path: str) -> PurePosixPath:
+    return PurePosixPath(path.lstrip("/"))
 
 
 class Resource(ABC):
@@ -200,17 +204,18 @@ class ExistClient:
         root_collection: str = "/",
         parser: etree.XMLParser = DEFAULT_PARSER,
     ):
+        _prefix = _mangle_path(prefix)
         self.__connection_props = ConnectionProps(
             transport=transport,
             user=user,
             password=password,
             host=host,
             port=port,
-            prefix=prefix,
+            prefix=_prefix,
         )
-        self.__base_url = f"{transport}://{user}:{password}@{host}:{port}/{prefix}"
+        self.__base_url = f"{transport}://{user}:{password}@{host}:{port}/{_prefix}"
         self.parser = parser
-        self._root_collection = root_collection
+        self.root_collection = root_collection
 
     @classmethod
     def from_url(cls, url: str, parser=DEFAULT_PARSER) -> "ExistClient":
@@ -417,31 +422,33 @@ class ExistClient:
         """
         The URL prefix of the database
         """
-        return self.__connection_props.prefix
+        return str(self.__connection_props.prefix)
 
     @property
     def root_collection(self) -> str:
         """
         The configured root collection for database queries.
         """
-        return self._root_collection
+        return str(self.__root_collection)
 
     @root_collection.setter
-    def root_collection(self, collection: str):
+    def root_collection(self, path: str):
         """
         Set the path to the root collection for database
         queries (e. g. '/db/foo/bar/').
         """
-        self._root_collection = collection
+        self.__root_collection = _mangle_path(path)
 
     @property
-    def root_collection_url(self):
+    def root_collection_url(self) -> str:
         """
         The URL pointing to the configured root collection.
         """
-        data_path = self._join_paths("/rest/", self.root_collection)
-        url = urljoin(self.base_url, data_path)
-        return url
+        result = f"{self.__base_url}/rest/{self.__root_collection}"
+        if result.endswith("/."):
+            return result[:-2]
+        else:
+            return result
 
     def query(self, query_expression: str) -> etree._Element:
         """
@@ -463,7 +470,7 @@ class ExistClient:
                                 relative to the configured root collection
         :param node: XML string
         """
-        path = self._join_paths(self.root_collection, document_path)
+        path = self.__root_collection / document_path.lstrip("/")
         self.query(
             f"let $collection-check := if (not(xmldb:collection-available('{path}'))) "
             f"then (xmldb:create-collection('/', '{path}')) else () "

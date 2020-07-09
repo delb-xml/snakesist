@@ -8,9 +8,7 @@ from snakesist import ExistClient
 
 @fixture
 def rest_base_url(test_client):
-    return (
-        f"{test_client.base_url}rest{test_client.root_collection}?_wrap=no&_indent=no"
-    )
+    return f"{test_client.root_collection_url}?_wrap=no&_indent=no"
 
 
 def existdb_is_responsive(url):
