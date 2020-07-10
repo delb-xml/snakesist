@@ -56,6 +56,12 @@ def _mangle_path(path: str) -> PurePosixPath:
     return PurePosixPath(path.lstrip("/"))
 
 
+def _validate_filename(filename: str):
+    as_path = PurePosixPath(filename)
+    if str(as_path) != as_path.name:
+        raise ValueError(f"Invalid filename: '{filename}'")
+
+
 class Resource(ABC):
     """
     A representation of an eXist resource (documents, nodes etc.).
