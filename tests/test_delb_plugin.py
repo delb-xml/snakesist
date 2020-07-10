@@ -63,4 +63,8 @@ def test_store_document(test_client):
     )
 
 
-# TODO test content w/ delbrefplg?
+@pytest.mark.usefixtures("db")
+def test_with_other_extension():
+    document = Document("existdb://localhost/exist/db/apps/test-data/dada_manifest.xml")
+    assert document.tei_header.title == "Das erste dadaistische Manifest"
+    assert document.tei_header.authors == ["Ball, Hugo"]
