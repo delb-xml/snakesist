@@ -1,6 +1,6 @@
 import pytest  # type: ignore
 
-from delb import Document, FailedDocumentLoading
+from delb import Document, FailedDocumentLoading  # type: ignore
 from snakesist import ExistClient
 
 

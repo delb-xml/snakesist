@@ -147,7 +147,7 @@ description = "A package with spare non-sense plugins for delb as developer's re
 name = "delb-reference-plugins"
 optional = false
 python-versions = ">=3.6,<4.0"
-version = "0.2b5"
+version = "0.2b6"
 
 [package.dependencies]
 [package.dependencies.delb]
@@ -362,7 +362,7 @@ dmypy = ["psutil (>=4.0)"]
 [[package]]
 category = "dev"
 description = "Experimental type system extensions for programs checked with the mypy typechecker."
-marker = "python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8\" or python_version >= \"3.8\")"
+marker = "python_version >= \"3.5\" and python_version < \"3.8\" or python_version >= \"3.8\""
 name = "mypy-extensions"
 optional = false
 python-versions = "*"
@@ -731,7 +731,7 @@ version = "1.6.2"
 [[package]]
 category = "dev"
 description = "a fork of Python 2 and 3 ast modules with type comment support"
-marker = "python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8\" or python_version >= \"3.8\")"
+marker = "python_version >= \"3.5\" and python_version < \"3.8\" or python_version >= \"3.8\""
 name = "typed-ast"
 optional = false
 python-versions = "*"
@@ -740,7 +740,7 @@ version = "1.4.1"
 [[package]]
 category = "dev"
 description = "Backported and Experimental Type Hints for Python 3.5+"
-marker = "python_version >= \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8\" or python_version >= \"3.8\")"
+marker = "python_version >= \"3.5\" and python_version < \"3.8\" or python_version >= \"3.8\""
 name = "typing-extensions"
 optional = false
 python-versions = "*"
@@ -773,7 +773,7 @@ six = "*"
 [[package]]
 category = "dev"
 description = "Backport of pathlib-compatible object wrapper for zip files"
-marker = "python_version >= \"3.5\" and python_version < \"3.8\" or python_version < \"3.8\" or python_version >= \"3.5\" and python_version < \"3.8\" and (python_version >= \"3.5\" and python_version < \"3.8\" or python_version < \"3.8\")"
+marker = "python_version >= \"3.5\" and python_version < \"3.8\" or python_version < \"3.8\""
 name = "zipp"
 optional = false
 python-versions = ">=3.6"
@@ -784,7 +784,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "875b6a37c028e579030f88faa3915d63e71e925e6c32c20dcd448e29d8d4ace4"
+content-hash = "115659973541e5bd6ed230cfca934f4c2303da4e1ae578000b569a00543a3ccf"
 python-versions = "^3.6"
 
 [metadata.files]
@@ -900,8 +900,8 @@ delb = [
     {file = "delb-0.2b5.tar.gz", hash = "sha256:763904bf9209f4dd48472f78ee4f00fb38cf81ab4e8b120fd50f351935f6aabb"},
 ]
 delb-reference-plugins = [
-    {file = "delb-reference-plugins-0.2b5.tar.gz", hash = "sha256:4b2cb6308d89bfbc0d02c89be818d06c2e0788756e2b9e8dce8b37b36012e270"},
-    {file = "delb_reference_plugins-0.2b5-py3-none-any.whl", hash = "sha256:081b6d1cdb1f5d924975fbf192043f30be7ebb7506e874aa3e9fde37cc5ba9fa"},
+    {file = "delb-reference-plugins-0.2b6.tar.gz", hash = "sha256:1f4959fac95c330b86b8237efbebb7f5771b5f34bbb878ea45c864418bf2c360"},
+    {file = "delb_reference_plugins-0.2b6-py3-none-any.whl", hash = "sha256:69a205372f71ad26fec0e5c36bbe7467bc28b8137fb22d88e9aa41665d2d72cf"},
 ]
 distro = [
     {file = "distro-1.5.0-py2.py3-none-any.whl", hash = "sha256:df74eed763e18d10d0da624258524ae80486432cd17392d9c3d96f5e83cd2799"},
