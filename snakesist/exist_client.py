@@ -362,16 +362,6 @@ class ExistClient:
 
         return response.content
 
-    def _delete_request(self, url: str) -> None:
-        response = requests.delete(
-            url,
-            headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self.user, self.password),
-        )
-
-        if response.status_code != requests.codes.ok:
-            response.raise_for_status()
-
     @staticmethod
     def _parse_item(node: etree._Element) -> QueryResultItem:
         return QueryResultItem(
@@ -579,9 +569,13 @@ class ExistClient:
 
     def delete_document(self, document_path: str) -> None:
         """
-        Remove a document from a database.
+        Removes a document from the associated database.
 
-        :param document_path: The path pointing to the document (relative to the REST endpoint, e. g. '/db/foo/bar')
+        :param document_path: The path pointing to the document within the root
+                              collection.
         """
-        url = self._join_paths(self.base_url, "rest", document_path)
-        self._delete_request(url)
+        response = requests.delete(
+            f"{self.root_collection_url}/{_mangle_path(document_path)}"
+        )
+        # TODO possible 404 exception
+        response.raise_for_status()

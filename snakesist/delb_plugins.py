@@ -145,12 +145,9 @@ class ExistDBExtension(DocumentExtensionHooks):
         the current ``existdb_collection`` and ``existdb_filename`` in the associated
         eXist-db instance.
         """
-        response = requests.delete(
-            f"{self.config.existdb.client.root_collection_url}/"
+        self.config.existdb.client.delete_document(
             f"{self.existdb_collection}/{self.existdb_filename}"
         )
-        # TODO possible 404 exception
-        response.raise_for_status()
 
     @property
     def existdb_filename(self) -> str:
