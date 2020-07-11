@@ -207,8 +207,8 @@ class ExistClient:
         host = parsed_url.hostname
         port = parsed_url.port
 
-        # to please mypy:
-        assert isinstance(host, str)
+        if not isinstance(host, str) and host:
+            raise ValueError(f"Invalid host in URL: {host}")
 
         if transport is None:
             probe_result = cls._probe_transport_and_port(
