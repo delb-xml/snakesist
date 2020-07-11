@@ -4,16 +4,13 @@
 """
 
 import re
-from abc import ABC, abstractmethod
 from pathlib import PurePosixPath
 from typing import List, NamedTuple, Optional, Tuple
 from urllib.parse import urljoin, urlparse
-from uuid import uuid4
 
 import requests
 from _delb.nodes import NodeBase, TagNode
 from lxml import cssselect, etree  # type: ignore
-from requests.auth import HTTPBasicAuth
 
 
 class QueryResultItem(NamedTuple):
@@ -62,13 +59,18 @@ def _validate_filename(filename: str):
         raise ValueError(f"Invalid filename: '{filename}'")
 
 
-class Resource(ABC):
+class NodeResource:
     """
-    A representation of an eXist resource (documents, nodes etc.).
+    A representation of an XML node in a eXist-db resource.
     Each Resource object must be coupled to an :class:`ExistClient`.
 
-    Resources are identified by IDs: Some resources (documents) just have
-    an absolute resource ID, while others (nodes) require an additional node ID.
+    Resources are identified by an absolute resource ID that points to the containing
+    document and a node ID within that document.
+
+    :param exist_client: The client to which the resource is coupled.
+    :query_result: A tuple containing the absolute resource ID, node ID
+                   and the node of the resource.
+
     """
 
     def __init__(
@@ -76,11 +78,6 @@ class Resource(ABC):
         exist_client: "ExistClient",
         query_result: Optional[QueryResultItem] = None,
     ):
-        """
-        :param exist_client: The client to which the resource is coupled.
-        :query_result: A tuple containing the absolute resource ID, node ID
-                       and the node of the resource.
-        """
         self.node: Optional[NodeBase]
 
         self._exist_client = exist_client
@@ -108,19 +105,21 @@ class Resource(ABC):
             abs_resource_id=self._abs_resource_id, node_id=self._node_id
         )
 
-    @abstractmethod
     def update_push(self):
-        """
-        Write the resource object to the database.
-        """
-        pass
+        """ Writes the node to the database. """
+        self._exist_client.update_node(
+            data=str(self.node),
+            abs_resource_id=self._abs_resource_id,
+            node_id=self._node_id,
+        )
 
-    @abstractmethod
     def delete(self):
-        """
-        Remove the node from the database.
-        """
-        pass
+        """ Deletes the node from the database. """
+        self._exist_client.delete_node(
+            abs_resource_id=self._abs_resource_id, node_id=self._node_id
+        )
+        self._node_id = ""
+        self._abs_resource_id = ""
 
     @property
     def abs_resource_id(self):
@@ -142,43 +141,6 @@ class Resource(ABC):
         The resource path pointing to the document.
         """
         return self._document_path
-
-
-class DocumentResource(Resource):
-    """
-    A representation of an eXist document node
-    """
-
-    def delete(self):
-        self._exist_client.delete_document(document_path=self.document_path)
-        self._node_id = ""
-        self._abs_resource_id = ""
-        self._document_path = ""
-
-    def update_push(self):
-        self._exist_client.update_document(
-            data=str(self.node), document_path=self.document_path,
-        )
-
-
-class NodeResource(Resource):
-    """
-    A representation of an eXist node at the sub-document level
-    """
-
-    def delete(self):
-        self._exist_client.delete_node(
-            abs_resource_id=self._abs_resource_id, node_id=self._node_id
-        )
-        self._node_id = ""
-        self._abs_resource_id = ""
-
-    def update_push(self):
-        self._exist_client.update_node(
-            data=str(self.node),
-            abs_resource_id=self._abs_resource_id,
-            node_id=self._node_id,
-        )
 
 
 class ExistClient:
@@ -306,8 +268,7 @@ class ExistClient:
                 else:
                     continue
 
-            content = etree.fromstring(response.content)
-            qualified_name = etree.QName(content)
+            qualified_name = etree.QName(etree.fromstring(response.content))
             if (
                 qualified_name.namespace == EXISTDB_NAMESPACE
                 and qualified_name.localname == "result"
@@ -321,10 +282,7 @@ class ExistClient:
         else:
             return None
 
-    @staticmethod
-    def _join_paths(*args):
-        return "/".join(s.strip("/") for s in args)
-
+    # TODO there's only one usage
     def _get_request(
         self, url: str, query: Optional[str] = None, wrap: bool = True
     ) -> bytes:
@@ -341,7 +299,6 @@ class ExistClient:
         response = requests.get(
             url,
             headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self.user, self.password),
             params=params,
         )
 
@@ -349,19 +306,7 @@ class ExistClient:
 
         return response.content
 
-    def _put_request(self, url: str, data: str) -> bytes:
-        response = requests.put(
-            url,
-            headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self.user, self.password),
-            data=data.encode("utf-8"),
-        )
-
-        if response.status_code != requests.codes.ok:
-            response.raise_for_status()
-
-        return response.content
-
+    # TODO there's only one usage
     @staticmethod
     def _parse_item(node: etree._Element) -> QueryResultItem:
         return QueryResultItem(
@@ -458,22 +403,8 @@ class ExistClient:
         )
         return etree.fromstring(response_string, parser=self.parser)
 
-    def create_resource(self, document_path: str, node: str):
-        """
-        Write a new document node to the database.
-
-        :param document_path: Path to collection where document will be stored,
-                                relative to the configured root collection
-        :param node: XML string
-        """
-        path = self.__root_collection / document_path.lstrip("/")
-        self.query(
-            f"let $collection-check := if (not(xmldb:collection-available('{path}'))) "
-            f"then (xmldb:create-collection('/', '{path}')) else () "
-            f"return xmldb:store('/{path}', '{uuid4().hex}', {node})"
-        )
-
-    def retrieve_resources(self, xpath: str) -> List[Resource]:
+    # TODO? rename
+    def retrieve_resources(self, xpath: str) -> List[NodeResource]:
         """
         Retrieve a set of resources from the database using
         an XPath expression.
@@ -493,14 +424,11 @@ class ExistClient:
         resources = []
         for item in fetch_snakesist_results(results_node):
             query_result = self._parse_item(item)
-            resources.append(
-                DocumentResource(exist_client=self, query_result=query_result)
-                if query_result.node_id == "1"
-                else NodeResource(exist_client=self, query_result=query_result)
-            )
+            resources.append(NodeResource(exist_client=self, query_result=query_result))
         return resources
 
-    def retrieve_resource(self, abs_resource_id: str, node_id: str = "") -> Resource:
+    # TODO? rename
+    def retrieve_resource(self, abs_resource_id: str, node_id: str) -> NodeResource:
         """
         Retrieve a single resource by its internal database IDs.
 
@@ -514,19 +442,14 @@ class ExistClient:
                 f"return util:collection-name($node) || '/' || util:document-name($node)"
             )
         )[0].text
-        assert isinstance(path, str), path
 
-        if node_id:
-            query = (
-                "util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), "
-                "'{node_id}')"
-            )
-        else:
-            query = f"util:get-resource-by-absolute-id({abs_resource_id})"
-        queried_node = self.query(query)[0]
-        assert isinstance(queried_node, etree._Element)
+        query = (
+            "util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), "
+            "'{node_id}')"
+        )
+        queried_node: etree._Element = self.query(query)[0]
 
-        return DocumentResource(
+        return NodeResource(
             self,
             QueryResultItem(abs_resource_id, node_id, path, TagNode(queried_node, {})),
         )
@@ -543,16 +466,6 @@ class ExistClient:
             f"update replace util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
             f"with {data}"
         )
-
-    def update_document(self, data: str, document_path: str) -> None:
-        """
-        Replace a document root node with an updated version.
-
-        :param data: A well-formed XML string containing the node to replace the old one with.
-        :param document_path: The path pointing to the document (relative to the REST endpoint, e. g. '/db/foo/bar')
-        """
-        url = self._join_paths(self.base_url, "rest", document_path)
-        self._put_request(url, data)
 
     def delete_node(self, abs_resource_id: str, node_id: str = "") -> None:
         """

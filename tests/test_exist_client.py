@@ -10,7 +10,7 @@ from snakesist import ExistClient
 def test_exist_client_delete_node(rest_base_url, test_client):
     Document(
         '<example id="t4">i stay<deletee> and i am to be deleted</deletee></example>',
-        existdb_client=test_client
+        existdb_client=test_client,
     ).existdb_store(filename="foo.xml")
 
     xq = "let $node := //deletee return util:absolute-resource-id($node)"
