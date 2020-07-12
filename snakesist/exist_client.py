@@ -12,7 +12,7 @@ import requests
 from _delb.nodes import NodeBase, TagNode
 from lxml import cssselect, etree  # type: ignore
 
-from snakesist.exceptions import ConfigurationError, NotFound
+from snakesist.exceptions import ConfigurationError, NotFound, ReadError, WriteError
 
 
 class QueryResultItem(NamedTuple):
@@ -265,7 +265,7 @@ class ExistClient:
             response = requests.get(f"{base}/{'/'.join(path_parts[:i])}/rest/")
 
             if response.status_code == 401:
-                raise ConfigurationError("Invalid credentials.")
+                raise ConfigurationError("Failed authentication.")
 
             if not content_type_is_xml(response.headers.get("Content-Type", "")):
                 if encountered_collection:

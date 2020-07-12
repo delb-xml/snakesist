@@ -12,7 +12,7 @@ from _delb.plugins.core_loaders import ftp_http_loader
 from _delb.plugins.https_loader import https_loader
 from _delb.typing import LoaderResult
 
-from snakesist.exceptions import WriteError, ReadError, NotFound
+from snakesist.exceptions import ConfigurationError, WriteError, ReadError, NotFound
 from snakesist.exist_client import _mangle_path, _validate_filename, ExistClient
 
 
@@ -68,7 +68,7 @@ def load_from_path(source: Any, config: SimpleNamespace) -> LoaderResult:
     except requests.HTTPError as e:
         if e.response.status_code == 404:
             raise NotFound(f"Document '{path}' not found.")
-        raise ReadError("Could not read from database.")
+        raise ReadError("Could not read from database.") from e
 
     config.__dict__.pop("source_url", None)
     config.existdb.collection = path.parent
@@ -80,7 +80,7 @@ def ensure_configured_client(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         if not isinstance(self.config.existdb.client, ExistClient):
-            raise RuntimeError(
+            raise ConfigurationError(
                 f"The document {self!r} has no configured eXist-db client."
             )
         return method(self, *args, **kwargs)
