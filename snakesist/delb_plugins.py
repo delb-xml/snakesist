@@ -12,7 +12,12 @@ from _delb.plugins.core_loaders import ftp_http_loader
 from _delb.plugins.https_loader import https_loader
 from _delb.typing import LoaderResult
 
-from snakesist.exceptions import ConfigurationError, WriteError, ReadError, NotFound
+from snakesist.exceptions import (
+    SnakesistConfigError,
+    SnakesistWriteError,
+    SnakesistReadError,
+    SnakesistNotFound,
+)
 from snakesist.exist_client import _mangle_path, _validate_filename, ExistClient
 
 
@@ -66,8 +71,8 @@ def load_from_path(source: Any, config: SimpleNamespace) -> LoaderResult:
             result = ftp_http_loader(url, config)
     except requests.HTTPError as e:
         if e.response.status_code == 404:
-            raise NotFound(f"Document '{path}' not found.")
-        raise ReadError("Could not read from database.") from e
+            raise SnakesistNotFound(f"Document '{path}' not found.")
+        raise SnakesistReadError("Could not read from database.") from e
 
     config.__dict__.pop("source_url", None)
     config.existdb.collection = path.parent
@@ -79,7 +84,7 @@ def ensure_configured_client(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         if not isinstance(self.config.existdb.client, ExistClient):
-            raise ConfigurationError(
+            raise SnakesistConfigError(
                 f"The document {self!r} has no configured eXist-db client."
             )
         return method(self, *args, **kwargs)
@@ -197,7 +202,7 @@ class ExistDBExtension(DocumentExtensionHooks):
         url = f"{client.root_collection_url}/{collection}/{filename}"
 
         if not replace_existing and requests.head(url).status_code == 200:
-            raise WriteError(
+            raise SnakesistWriteError(
                 "Document already exists. Overwriting must be explicitly allowed."
             )
 
@@ -205,8 +210,8 @@ class ExistDBExtension(DocumentExtensionHooks):
             url, headers={"Content-Type": "application/xml"}, data=str(self).encode(),
         )
         if not response.status_code == 201:
-            raise WriteError(f"Unexpected response: {response}")
+            raise SnakesistWriteError(f"Unexpected response: {response}")
         try:
             response.raise_for_status()
         except Exception as e:
-            raise WriteError("Unhandled error while storing.") from e
+            raise SnakesistWriteError("Unhandled error while storing.") from e
