@@ -403,7 +403,8 @@ class ExistClient:
 
     def query(self, query_expression: str) -> etree._Element:
         """
-        Make a database query using XQuery
+        Make a database query using XQuery. The configured root collection
+        will be the starting point of the query.
 
         :param query_expression: XQuery expression
         :return: The query result as a ``delb.Document`` object.
@@ -416,7 +417,8 @@ class ExistClient:
     def xpath(self, expression: str) -> List[NodeResource]:
         """
         Retrieve a set of resources from the database using
-        an XPath expression.
+        an XPath expression. The configured root collection
+        will be the starting point of the query.
 
         :param expression: XPath expression (whatever version your eXist
                            instance supports via its RESTful API)
