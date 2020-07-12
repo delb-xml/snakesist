@@ -307,7 +307,10 @@ class ExistClient:
             params=params,
         )
 
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            raise ReadError("Unhandled query error.") from e
 
         return response.content
 
@@ -496,4 +499,7 @@ class ExistClient:
         )
         if response.status_code == 404:
             raise NotFound(f"Document '{document_path}' not found.")
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            raise WriteError("Unhandled error while deleting.") from e

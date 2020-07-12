@@ -205,6 +205,9 @@ class ExistDBExtension(DocumentExtensionHooks):
         response = requests.put(
             url, headers={"Content-Type": "application/xml"}, data=str(self).encode(),
         )
-        response.raise_for_status()
         if not response.status_code == 201:
             raise WriteError(f"Unexpected response: {response}")
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            raise WriteError("Unhandled error while storing.") from e
