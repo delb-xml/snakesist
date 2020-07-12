@@ -403,18 +403,17 @@ class ExistClient:
         )
         return etree.fromstring(response_string, parser=self.parser)
 
-    # TODO? rename
-    def retrieve_resources(self, xpath: str) -> List[NodeResource]:
+    def xpath(self, expression: str) -> List[NodeResource]:
         """
         Retrieve a set of resources from the database using
         an XPath expression.
 
-        :param xpath: XPath expression (whatever version your eXist
-                      instance supports via its RESTful API)
+        :param expression: XPath expression (whatever version your eXist
+                           instance supports via its RESTful API)
         :return: The query results as a list of :class:`Resource` objects.
         """
         results_node = self.query(
-            f"for $node in {xpath} "
+            f"for $node in {expression} "
             f"return <snakesist:result xmlns:snakesist='{XML_NAMESPACE}'"
             f"nodeid='{{util:node-id($node)}}' "
             f"absid='{{util:absolute-resource-id($node)}}' "

@@ -32,7 +32,7 @@ def test_exist_client_delete_document(rest_base_url, test_client):
         Document("/bar/foo.xml", existdb_client=test_client)
 
 
-def test_exist_client_retrieve_resources(test_client):
+def test_exist_client_xpath(test_client):
     paragraph_1 = "<p>retrieve me first!</p>"
     paragraph_2 = "<p>retrieve me too!</p>"
     Document(
@@ -42,7 +42,7 @@ def test_exist_client_retrieve_resources(test_client):
         filename="document_2.xml"
     )
 
-    retrieved_nodes = test_client.retrieve_resources("//p")
+    retrieved_nodes = test_client.xpath("//p")
     retrieved_nodes_str = [str(node) for node in retrieved_nodes]
     assert paragraph_1 in retrieved_nodes_str
     assert paragraph_2 in retrieved_nodes_str
