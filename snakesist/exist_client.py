@@ -298,41 +298,6 @@ class ExistClient:
         else:
             return None
 
-    # TODO there's only one usage
-    def _get_request(
-        self, url: str, query: Optional[str] = None, wrap: bool = True
-    ) -> bytes:
-        if query:
-            params = {
-                "_howmany": "0",
-                "_indent": "no",
-                "_wrap": "yes" if wrap else "no",
-                "_query": query,
-            }
-        else:
-            params = {}
-
-        response = requests.get(
-            url, headers={"Content-Type": "application/xml"}, params=params,
-        )
-
-        try:
-            response.raise_for_status()
-        except Exception as e:
-            raise SnakesistReadError("Unhandled query error.") from e
-
-        return response.content
-
-    # TODO there's only one usage
-    @staticmethod
-    def _parse_item(node: etree._Element) -> QueryResultItem:
-        return QueryResultItem(
-            node.attrib["absid"],
-            node.attrib["nodeid"],
-            node.attrib["path"],
-            TagNode(node[0], {}),
-        )
-
     @property
     def base_url(self) -> str:
         """
@@ -416,10 +381,26 @@ class ExistClient:
         :param query_expression: XQuery expression
         :return: The query result as a ``delb.Document`` object.
         """
-        response_string = self._get_request(
-            self.root_collection_url, query=query_expression
+
+        params = {
+            "_howmany": "0",
+            "_indent": "no",
+            "_wrap": "yes",
+            "_query": query_expression,
+        }
+
+        response = requests.get(
+            self.root_collection_url,
+            headers={"Content-Type": "application/xml"},
+            params=params,
         )
-        return etree.fromstring(response_string, parser=self.parser)
+
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            raise SnakesistReadError("Unhandled query error.") from e
+
+        return etree.fromstring(response.content, parser=self.parser)
 
     def xpath(self, expression: str) -> List[NodeResource]:
         """
@@ -441,7 +422,12 @@ class ExistClient:
         )
         resources = []
         for item in fetch_snakesist_results(results_node):
-            query_result = self._parse_item(item)
+            query_result = QueryResultItem(
+                item.attrib["absid"],
+                item.attrib["nodeid"],
+                item.attrib["path"],
+                TagNode(item[0], {}),
+            )
             resources.append(NodeResource(exist_client=self, query_result=query_result))
         return resources
 
