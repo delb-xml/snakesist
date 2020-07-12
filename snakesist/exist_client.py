@@ -6,7 +6,7 @@
 import re
 from pathlib import PurePosixPath
 from typing import List, NamedTuple, Optional, Tuple
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 import requests
 from _delb.nodes import NodeBase, TagNode
@@ -200,9 +200,13 @@ class ExistClient:
         elif parsed_url.scheme.startswith("existdb+"):
             transport = parsed_url.scheme.split("+")[1]
             if transport not in TRANSPORT_PROTOCOLS:
-                raise ConfigurationError(f"Invalid transport '{transport}' for existdb.")
+                raise ConfigurationError(
+                    f"Invalid transport '{transport}' for existdb."
+                )
         else:
-            raise ConfigurationError(f"Invalid URL scheme '{parsed_url.scheme}' for existdb.")
+            raise ConfigurationError(
+                f"Invalid URL scheme '{parsed_url.scheme}' for existdb."
+            )
 
         user = parsed_url.username or ""
         password = parsed_url.password or ""
@@ -302,9 +306,7 @@ class ExistClient:
             params = {}
 
         response = requests.get(
-            url,
-            headers={"Content-Type": "application/xml"},
-            params=params,
+            url, headers={"Content-Type": "application/xml"}, params=params,
         )
 
         try:
