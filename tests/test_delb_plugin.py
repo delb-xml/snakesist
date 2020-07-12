@@ -2,6 +2,7 @@ import pytest  # type: ignore
 
 from delb import Document, FailedDocumentLoading  # type: ignore
 from snakesist import ExistClient
+from snakesist.exceptions import WriteError
 
 
 def test_delete_document(test_client):
@@ -50,7 +51,7 @@ def test_store_document(test_client):
 
     document.existdb_collection = "/another/collection/"
     document.existdb_filename = "another_name.xml"
-    with pytest.raises(RuntimeError):
+    with pytest.raises(WriteError):
         document.existdb_store()
 
     test_client.root_collection = "/"

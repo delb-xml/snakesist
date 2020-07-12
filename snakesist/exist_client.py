@@ -12,6 +12,8 @@ import requests
 from _delb.nodes import NodeBase, TagNode
 from lxml import cssselect, etree  # type: ignore
 
+from snakesist.exceptions import ConfigurationError, NotFound
+
 
 class QueryResultItem(NamedTuple):
     absolute_id: str
@@ -198,9 +200,9 @@ class ExistClient:
         elif parsed_url.scheme.startswith("existdb+"):
             transport = parsed_url.scheme.split("+")[1]
             if transport not in TRANSPORT_PROTOCOLS:
-                raise ValueError(f"Invalid transport '{transport}' for existdb.")
+                raise ConfigurationError(f"Invalid transport '{transport}' for existdb.")
         else:
-            raise ValueError(f"Invalid URL scheme '{parsed_url.scheme}' for existdb.")
+            raise ConfigurationError(f"Invalid URL scheme '{parsed_url.scheme}' for existdb.")
 
         user = parsed_url.username or ""
         password = parsed_url.password or ""
@@ -208,14 +210,14 @@ class ExistClient:
         port = parsed_url.port
 
         if not isinstance(host, str) and host:
-            raise ValueError(f"Invalid host in URL: {host}")
+            raise ConfigurationError(f"Invalid host in URL: {host}")
 
         if transport is None:
             probe_result = cls._probe_transport_and_port(
                 f"{user}:{password}@{host}", port
             )
             if probe_result is None:
-                raise RuntimeError(f"Couldn't figure out how to talk to {host}.")
+                raise ConfigurationError(f"Couldn't figure out how to talk to {host}.")
             transport, port = probe_result
         elif port is None:
             port = TRANSPORT_PROTOCOLS[transport]
@@ -224,7 +226,7 @@ class ExistClient:
             f"{transport}://{user}:{password}@{host}:{port}", parsed_url.path
         )
         if prefix is None:
-            raise RuntimeError(
+            raise ConfigurationError(
                 "Couldn't determine the location of the 'rest' interface."
             )
 
@@ -261,6 +263,9 @@ class ExistClient:
         # will return false results if a path contained a part named "rest"
         for i in range(len(path_parts), 0, -1):
             response = requests.get(f"{base}/{'/'.join(path_parts[:i])}/rest/")
+
+            if response.status_code == 401:
+                raise ConfigurationError("Invalid credentials.")
 
             if not content_type_is_xml(response.headers.get("Content-Type", "")):
                 if encountered_collection:
@@ -489,5 +494,6 @@ class ExistClient:
         response = requests.delete(
             f"{self.root_collection_url}/{_mangle_path(document_path)}"
         )
-        # TODO possible 404 exception
+        if response.status_code == 404:
+            raise NotFound(f"Document '{document_path}' not found.")
         response.raise_for_status()

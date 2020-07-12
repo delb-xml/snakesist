@@ -12,6 +12,7 @@ from _delb.plugins.core_loaders import ftp_http_loader
 from _delb.plugins.https_loader import https_loader
 from _delb.typing import LoaderResult
 
+from snakesist.exceptions import WriteError, ReadError, NotFound
 from snakesist.exist_client import _mangle_path, _validate_filename, ExistClient
 
 
@@ -59,10 +60,16 @@ def load_from_path(source: Any, config: SimpleNamespace) -> LoaderResult:
     client: ExistClient = config.existdb.client
     url = f"{client.root_collection_url}/{path}"
 
-    if client.transport == "https":
-        result = https_loader(url, config)
-    else:  # http
-        result = ftp_http_loader(url, config)
+    try:
+        if client.transport == "https":
+            result = https_loader(url, config)
+        else:  # http
+            result = ftp_http_loader(url, config)
+    except requests.HTTPError as e:
+        if e.response.status_code == 404:
+            raise NotFound(f"Document '{path}' not found.")
+        raise ReadError("Could not read from database.")
+
     config.__dict__.pop("source_url", None)
     config.existdb.collection = path.parent
     config.existdb.filename = path.name
@@ -191,11 +198,13 @@ class ExistDBExtension(DocumentExtensionHooks):
         url = f"{client.root_collection_url}/{collection}/{filename}"
 
         if not replace_existing and requests.head(url).status_code == 200:
-            raise RuntimeError("Document already exists.")
+            raise WriteError(
+                "Document already exists. Overwriting must be explicitly allowed."
+            )
 
         response = requests.put(
             url, headers={"Content-Type": "application/xml"}, data=str(self).encode(),
         )
         response.raise_for_status()
         if not response.status_code == 201:
-            raise RuntimeError(f"Unexpected response: {response}")
+            raise WriteError(f"Unexpected response: {response}")
