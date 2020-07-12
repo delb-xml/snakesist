@@ -34,8 +34,7 @@ def existdb_loader(source: Any, config: SimpleNamespace) -> LoaderResult:
 
 def load_from_url(source: Any, config: SimpleNamespace) -> LoaderResult:
     if hasattr(config, "existdb"):
-        warn("The configured existdb configuration is replaced.")
-    # TODO return some exception messages as text
+        warn("The current existdb configuration is replaced.")
     config.existdb = SimpleNamespace(client=ExistClient.from_url(source))
     path = PurePosixPath(urlparse(source).path).relative_to(
         PurePosixPath(f"/{config.existdb.client.prefix}")
