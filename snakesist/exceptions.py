@@ -4,25 +4,25 @@ class SnakesistError(Exception):
     pass
 
 
-class ConfigurationError(SnakesistError):
+class SnakesistConfigError(SnakesistError):
     """Raised if the database connection is improperly configured"""
 
     pass
 
 
-class ReadError(SnakesistError):
+class SnakesistReadError(SnakesistError):
     """Raised if a writing operation fails"""
 
     pass
 
 
-class NotFound(ReadError):
+class SnakesistNotFound(SnakesistReadError):
     """Raised if a database resource is not found"""
 
     pass
 
 
-class WriteError(SnakesistError):
+class SnakesistWriteError(SnakesistError):
     """Raised if a reading operation fails"""
 
     pass

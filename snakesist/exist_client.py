@@ -12,7 +12,12 @@ import requests
 from _delb.nodes import NodeBase, TagNode
 from lxml import cssselect, etree  # type: ignore
 
-from snakesist.exceptions import ConfigurationError, NotFound, ReadError, WriteError
+from snakesist.exceptions import (
+    SnakesistConfigError,
+    SnakesistNotFound,
+    SnakesistReadError,
+    SnakesistWriteError,
+)
 
 
 class QueryResultItem(NamedTuple):
@@ -200,11 +205,11 @@ class ExistClient:
         elif parsed_url.scheme.startswith("existdb+"):
             transport = parsed_url.scheme.split("+")[1]
             if transport not in TRANSPORT_PROTOCOLS:
-                raise ConfigurationError(
+                raise SnakesistConfigError(
                     f"Invalid transport '{transport}' for existdb."
                 )
         else:
-            raise ConfigurationError(
+            raise SnakesistConfigError(
                 f"Invalid URL scheme '{parsed_url.scheme}' for existdb."
             )
 
@@ -214,14 +219,16 @@ class ExistClient:
         port = parsed_url.port
 
         if not isinstance(host, str) and host:
-            raise ConfigurationError(f"Invalid host in URL: {host}")
+            raise SnakesistConfigError(f"Invalid host in URL: {host}")
 
         if transport is None:
             probe_result = cls._probe_transport_and_port(
                 f"{user}:{password}@{host}", port
             )
             if probe_result is None:
-                raise ConfigurationError(f"Couldn't figure out how to talk to {host}.")
+                raise SnakesistConfigError(
+                    f"Couldn't figure out how to talk to {host}."
+                )
             transport, port = probe_result
         elif port is None:
             port = TRANSPORT_PROTOCOLS[transport]
@@ -230,7 +237,7 @@ class ExistClient:
             f"{transport}://{user}:{password}@{host}:{port}", parsed_url.path
         )
         if prefix is None:
-            raise ConfigurationError(
+            raise SnakesistConfigError(
                 "Couldn't determine the location of the 'rest' interface."
             )
 
@@ -269,7 +276,7 @@ class ExistClient:
             response = requests.get(f"{base}/{'/'.join(path_parts[:i])}/rest/")
 
             if response.status_code == 401:
-                raise ConfigurationError("Failed authentication.")
+                raise SnakesistConfigError("Failed authentication.")
 
             if not content_type_is_xml(response.headers.get("Content-Type", "")):
                 if encountered_collection:
@@ -290,41 +297,6 @@ class ExistClient:
             return "/".join(path_parts[:i])
         else:
             return None
-
-    # TODO there's only one usage
-    def _get_request(
-        self, url: str, query: Optional[str] = None, wrap: bool = True
-    ) -> bytes:
-        if query:
-            params = {
-                "_howmany": "0",
-                "_indent": "no",
-                "_wrap": "yes" if wrap else "no",
-                "_query": query,
-            }
-        else:
-            params = {}
-
-        response = requests.get(
-            url, headers={"Content-Type": "application/xml"}, params=params,
-        )
-
-        try:
-            response.raise_for_status()
-        except Exception as e:
-            raise ReadError("Unhandled query error.") from e
-
-        return response.content
-
-    # TODO there's only one usage
-    @staticmethod
-    def _parse_item(node: etree._Element) -> QueryResultItem:
-        return QueryResultItem(
-            node.attrib["absid"],
-            node.attrib["nodeid"],
-            node.attrib["path"],
-            TagNode(node[0], {}),
-        )
 
     @property
     def base_url(self) -> str:
@@ -403,20 +375,38 @@ class ExistClient:
 
     def query(self, query_expression: str) -> etree._Element:
         """
-        Make a database query using XQuery
+        Make a database query using XQuery. The configured root collection
+        will be the starting point of the query.
 
         :param query_expression: XQuery expression
         :return: The query result as a ``delb.Document`` object.
         """
-        response_string = self._get_request(
-            self.root_collection_url, query=query_expression
+
+        params = {
+            "_howmany": "0",
+            "_indent": "no",
+            "_wrap": "yes",
+            "_query": query_expression,
+        }
+
+        response = requests.get(
+            self.root_collection_url,
+            headers={"Content-Type": "application/xml"},
+            params=params,
         )
-        return etree.fromstring(response_string, parser=self.parser)
+
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            raise SnakesistReadError("Unhandled query error.") from e
+
+        return etree.fromstring(response.content, parser=self.parser)
 
     def xpath(self, expression: str) -> List[NodeResource]:
         """
         Retrieve a set of resources from the database using
-        an XPath expression.
+        an XPath expression. The configured root collection
+        will be the starting point of the query.
 
         :param expression: XPath expression (whatever version your eXist
                            instance supports via its RESTful API)
@@ -432,7 +422,12 @@ class ExistClient:
         )
         resources = []
         for item in fetch_snakesist_results(results_node):
-            query_result = self._parse_item(item)
+            query_result = QueryResultItem(
+                item.attrib["absid"],
+                item.attrib["nodeid"],
+                item.attrib["path"],
+                TagNode(item[0], {}),
+            )
             resources.append(NodeResource(exist_client=self, query_result=query_result))
         return resources
 
@@ -500,8 +495,8 @@ class ExistClient:
             f"{self.root_collection_url}/{_mangle_path(document_path)}"
         )
         if response.status_code == 404:
-            raise NotFound(f"Document '{document_path}' not found.")
+            raise SnakesistNotFound(f"Document '{document_path}' not found.")
         try:
             response.raise_for_status()
         except Exception as e:
-            raise WriteError("Unhandled error while deleting.") from e
+            raise SnakesistWriteError("Unhandled error while deleting.") from e
