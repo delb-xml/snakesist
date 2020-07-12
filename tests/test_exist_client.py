@@ -2,7 +2,7 @@ import pytest  # type: ignore
 import requests
 from _delb.exceptions import FailedDocumentLoading
 
-from delb import Document
+from delb import Document  # type: ignore
 
 from snakesist import ExistClient
 
