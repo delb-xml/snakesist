@@ -21,6 +21,50 @@ is_existdb_url = re.compile(r"^existdb(\+https?)?://.+").match
 
 @plugin_manager.register_loader()
 def existdb_loader(source: Any, config: SimpleNamespace) -> LoaderResult:
+    """
+    This loader loads a document from a eXist-db instance. There are two ways to
+    retrieve a particular document.
+
+    One is to specify an URL with the ``existdb://`` scheme, which can optionally be
+    extended with the transport protocol: ``existdb+http://`` or ``existdb+https://``.
+
+    The overall pattern of the URLs is:
+    ``existdb[+http[s]]://[[<username>]:[<password>]@]<host>[:<port>][/<prefix>]/<path>``
+
+    For example:
+
+    .. code-block:: python
+
+        document = delb.Document("existdb://example.org/exist/corpus/document.xml")
+
+    Note that omitted ports would default to ``80`` or ``443`` respectively, depending
+    on the used transport protocol. Which in turn is probed for if not specified,
+    preferring encrypted connections.
+
+    The other way is to pass a configured client as ``existdb_client`` keyword and a
+    path as string or :class:`pathlib.PurePosixPath` that points to the document within
+    the client's configured :attr:`snakesist.ExistClient.root_collection`, hence this
+    would be an equivalent to the example above, assuming that ``https`` is available on
+    the addressed host:
+
+    .. code-block:: python
+
+        client = snakesist.ExistClient(
+            transport="https",
+            host="example.org",
+            port=443,
+            user="",
+            root_collection="/corpus",
+        )
+        document = delb.Document("document.xml", existdb_client=client)
+
+    In both cases the document instance will have a configured ``config`` namespace
+    ``existdb`` with the property ``client`` which is a :class:`snakesist.ExistClient`
+    instance.
+
+    Further interaction with the database is facilitated with the
+    :class:`ExistDBExtension` that extends the :class:`delb.Document` class.
+    """
     if isinstance(source, str) and is_existdb_url(source):
         return load_from_url(source, config)
     elif hasattr(config, "existdb"):
@@ -93,31 +137,7 @@ class ExistDBExtension(DocumentExtensionHooks):
     This class provides extensions to :class:`delb.Document` in order to interact
     with a eXist-db instance.
 
-    Documents can be loaded from an eXist-db instance by either specifying an URL with
-    the ``existdb://`` scheme or by specifying a path made up of a collection path and
-    a filename and passing a :class:`snakesist.ExistClient` instance with the
-    ``existdb_client`` keyword. URL schemes can specify the desired transport
-    protocol: ``existdb+http://`` or ``existdb+https://``. These two initializations
-    would yield the same :class:`delb.Document`:
-
-    .. code-block::
-
-        import delb
-        import snakesist
-
-        # with an URL
-        document = delb.Document(
-            "existdb://example.exist-host.org/exist/collection/document.xml"
-        )
-
-        # with a client
-        client = snakesist.ExistClient(
-            host="example.exist-host.org",
-            port=443,
-            prefix="exist",
-            root_collection="/",
-        )
-        document = delb.Document("/collection/document.xml", existdb_client=client)
+    See :func:`existdb_loader` on retrieving documents from an eXist-db instance.
     """
 
     # for mypy:
@@ -148,8 +168,8 @@ class ExistDBExtension(DocumentExtensionHooks):
     def existdb_delete(self):
         """
         Deletes the document that currently resides at the location which is made up of
-        the current ``existdb_collection`` and ``existdb_filename`` in the associated
-        eXist-db instance.
+        the current :attr:`ExistDBExtension.existdb_collection` and
+        :attr:`ExistDBExtension.existdb_filename` in the associated eXist-db instance.
         """
         self.config.existdb.client.delete_document(
             f"{self.existdb_collection}/{self.existdb_filename}"
