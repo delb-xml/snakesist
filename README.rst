@@ -22,7 +22,7 @@ It supports basic CRUD operations and uses `delb <https://delb.readthedocs.io>`_
 
     pip install snakesist
 
-``snakesist`` allows you to access individual documents from the database with a ``delb.Document``, either by simply using a URL
+``snakesist`` allows you to access individual documents from the database using a ``delb.Document`` object, either by simply passing a URL
 
 .. code-block:: python
 
@@ -38,7 +38,7 @@ or by instantiating a database client which you can subsequently reuse
 
     >>> from snakesist import ExistClient
 
-    >>> my_local_db = ExistClient(host="localhost", port=8080, user="admin", password="", root_collection="/db/manifestos")
+    >>> my_local_db = ExistClient(host="localhost", port=8080, user="admin", password="", root_collection="/db/manifests")
     >>> dada_manifest = Document("dada_manifest.xml", existdb_client=my_local_db)
     >>> [header.full_text for header in dada_manifest.xpath("//head")]
     ["Hugo Ball", "Das erste dadaistische Manifest"]
@@ -52,7 +52,7 @@ and not only for accessing individual documents, but also for querying data acro
 .. code-block:: python
 
     >>> all_headers = my_local_db.xpath("//*:head")
-    >>> [header.full_text for header in all_headers]
+    >>> [header.node.full_text for header in all_headers]
     ["Hugo Ball", "Das erste dadaistische Manifest", "Manifest der Kommunistischen Partei", "I. Bourgeois und Proletarier.", "II. Proletarier und Kommunisten", "III. Sozialistische und kommunistische Literatur", "IV. Stellung der Kommunisten zu den verschiedenen oppositionellen Parteien"]
 
 You can of course also modify and store documents back into the database or create new ones and store them.
