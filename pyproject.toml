@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "snakesist"
-version = "0.1.1"
+version = "0.2.0"
 description = "A Python database interface for eXist-db"
 license = "MIT"
 authors = ["Theodor Costea <theo.costea@gmail.com>", "Frank Sachsenheim <funkyfuture@riseup.net>"]
@@ -20,8 +20,7 @@ snakesist = "snakesist.delb_plugins"
 
 [tool.poetry.dependencies]
 python = "^3.6"
-delb = "^0.2b3"
-requests = "^2.22"
+delb = { version="^0.2", extras=["https-loader"] }
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
@@ -30,6 +29,7 @@ sphinx = "*"
 sphinx_rtd_theme = "^0.4.3"
 pytest-docker = "^0.7.2"
 docker-compose = "^1.26.0"
+delb-reference-plugins = "^0.2"
 
 [build-system]
 requires = ["poetry>=0.12"]

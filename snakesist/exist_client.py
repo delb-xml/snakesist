@@ -3,15 +3,21 @@
     :synopsis: A module containing basic tools for connecting to eXist.
 """
 
-from abc import ABC, abstractmethod
-from typing import List, Optional, NamedTuple
-from urllib.parse import urljoin
-from uuid import uuid4
+import re
+from pathlib import PurePosixPath
+from typing import List, NamedTuple, Optional, Tuple
+from urllib.parse import urlparse
 
 import requests
-from delb.nodes import NodeBase, TagNode
+from _delb.nodes import NodeBase, TagNode
 from lxml import cssselect, etree  # type: ignore
-from requests.auth import HTTPBasicAuth
+
+from snakesist.exceptions import (
+    SnakesistConfigError,
+    SnakesistNotFound,
+    SnakesistReadError,
+    SnakesistWriteError,
+)
 
 
 class QueryResultItem(NamedTuple):
@@ -27,7 +33,7 @@ class ConnectionProps(NamedTuple):
     password: str
     host: str
     port: int
-    prefix: str
+    prefix: PurePosixPath
 
 
 DEFAULT_TRANSPORT = "http"
@@ -36,24 +42,42 @@ DEFAULT_PORT = 8080
 DEFAULT_USER = "admin"
 DEFAULT_PASSWORD = ""
 DEFAULT_PARSER = etree.XMLParser(recover=True)
+EXISTDB_NAMESPACE = "http://exist.sourceforge.net/NS/exist"
+TRANSPORT_PROTOCOLS = {"https": 443, "http": 80}  # the order matters!
 XML_NAMESPACE = "https://snakesist.readthedocs.io/"
 
 
 fetch_resource_paths = cssselect.CSSSelector(
-    "x|result x|value", namespaces={"x": "http://exist.sourceforge.net/NS/exist"}
+    "x|result x|value", namespaces={"x": EXISTDB_NAMESPACE}
 )
 fetch_snakesist_results = cssselect.CSSSelector(
     "x|result", namespaces={"x": XML_NAMESPACE}
 )
+content_type_is_xml = re.compile(r"^(application|text)/xml(;.+)?").match
 
 
-class Resource(ABC):
+def _mangle_path(path: str) -> PurePosixPath:
+    return PurePosixPath(path.lstrip("/"))
+
+
+def _validate_filename(filename: str):
+    as_path = PurePosixPath(filename)
+    if str(as_path) != as_path.name:
+        raise ValueError(f"Invalid filename: '{filename}'")
+
+
+class NodeResource:
     """
-    A representation of an eXist resource (documents, nodes etc.).
+    A representation of an XML node in a eXist-db resource.
     Each Resource object must be coupled to an :class:`ExistClient`.
 
-    Resources are identified by IDs: Some resources (documents) just have
-    an absolute resource ID, while others (nodes) require an additional node ID.
+    Resources are identified by an absolute resource ID that points to the containing
+    document and a node ID within that document.
+
+    :param exist_client: The client to which the resource is coupled.
+    :query_result: A tuple containing the absolute resource ID, node ID
+                   and the node of the resource.
+
     """
 
     def __init__(
@@ -61,11 +85,6 @@ class Resource(ABC):
         exist_client: "ExistClient",
         query_result: Optional[QueryResultItem] = None,
     ):
-        """
-        :param exist_client: The client to which the resource is coupled.
-        :query_result: A tuple containing the absolute resource ID, node ID
-                       and the node of the resource.
-        """
         self.node: Optional[NodeBase]
 
         self._exist_client = exist_client
@@ -93,19 +112,21 @@ class Resource(ABC):
             abs_resource_id=self._abs_resource_id, node_id=self._node_id
         )
 
-    @abstractmethod
     def update_push(self):
-        """
-        Write the resource object to the database.
-        """
-        pass
+        """ Writes the node to the database. """
+        self._exist_client.update_node(
+            data=str(self.node),
+            abs_resource_id=self._abs_resource_id,
+            node_id=self._node_id,
+        )
 
-    @abstractmethod
     def delete(self):
-        """
-        Remove the node from the database.
-        """
-        pass
+        """ Deletes the node from the database. """
+        self._exist_client.delete_node(
+            abs_resource_id=self._abs_resource_id, node_id=self._node_id
+        )
+        self._node_id = ""
+        self._abs_resource_id = ""
 
     @property
     def abs_resource_id(self):
@@ -127,43 +148,6 @@ class Resource(ABC):
         The resource path pointing to the document.
         """
         return self._document_path
-
-
-class DocumentResource(Resource):
-    """
-    A representation of an eXist document node
-    """
-
-    def delete(self):
-        self._exist_client.delete_document(document_path=self.document_path)
-        self._node_id = ""
-        self._abs_resource_id = ""
-        self._document_path = ""
-
-    def update_push(self):
-        self._exist_client.update_document(
-            data=str(self.node), document_path=self.document_path,
-        )
-
-
-class NodeResource(Resource):
-    """
-    A representation of an eXist node at the sub-document level
-    """
-
-    def delete(self):
-        self._exist_client.delete_node(
-            abs_resource_id=self._abs_resource_id, node_id=self._node_id
-        )
-        self._node_id = ""
-        self._abs_resource_id = ""
-
-    def update_push(self):
-        self._exist_client.update_node(
-            data=str(self.node),
-            abs_resource_id=self._abs_resource_id,
-            node_id=self._node_id,
-        )
 
 
 class ExistClient:
@@ -195,77 +179,124 @@ class ExistClient:
         root_collection: str = "/",
         parser: etree.XMLParser = DEFAULT_PARSER,
     ):
+        _prefix = _mangle_path(prefix)
         self.__connection_props = ConnectionProps(
             transport=transport,
             user=user,
             password=password,
             host=host,
             port=port,
-            prefix=prefix,
+            prefix=_prefix,
         )
-        self.__base_url = f"{transport}://{user}:{password}@{host}:{port}/{prefix}"
+        self.__base_url = f"{transport}://{user}:{password}@{host}:{port}/{_prefix}"
         self.parser = parser
-        self._root_collection = root_collection
+        self.root_collection = root_collection
 
-    @staticmethod
-    def _join_paths(*args):
-        return "/".join(s.strip("/") for s in args)
+    @classmethod
+    def from_url(cls, url: str, parser=DEFAULT_PARSER) -> "ExistClient":
+        """
+        Returns a client instance from the given URL. Path parts that point to something
+        beyond the database instance's path prefix are ignored.
+        """
+        parsed_url = urlparse(url)
 
-    def _get_request(
-        self, url: str, query: Optional[str] = None, wrap: bool = True
-    ) -> bytes:
-        if query:
-            params = {
-                "_howmany": "0",
-                "_indent": "no",
-                "_wrap": "yes" if wrap else "no",
-                "_query": query,
-            }
+        if parsed_url.scheme == "existdb":
+            transport = None
+        elif parsed_url.scheme.startswith("existdb+"):
+            transport = parsed_url.scheme.split("+")[1]
+            if transport not in TRANSPORT_PROTOCOLS:
+                raise SnakesistConfigError(
+                    f"Invalid transport '{transport}' for existdb."
+                )
         else:
-            params = {}
+            raise SnakesistConfigError(
+                f"Invalid URL scheme '{parsed_url.scheme}' for existdb."
+            )
 
-        response = requests.get(
-            url,
-            headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self.user, self.password),
-            params=params,
+        user = parsed_url.username or ""
+        password = parsed_url.password or ""
+        host = parsed_url.hostname
+        port = parsed_url.port
+
+        if not isinstance(host, str) and host:
+            raise SnakesistConfigError(f"Invalid host in URL: {host}")
+
+        if transport is None:
+            probe_result = cls._probe_transport_and_port(
+                f"{user}:{password}@{host}", port
+            )
+            if probe_result is None:
+                raise SnakesistConfigError(
+                    f"Couldn't figure out how to talk to {host}."
+                )
+            transport, port = probe_result
+        elif port is None:
+            port = TRANSPORT_PROTOCOLS[transport]
+
+        prefix = cls._probe_instance_prefix(
+            f"{transport}://{user}:{password}@{host}:{port}", parsed_url.path
         )
+        if prefix is None:
+            raise SnakesistConfigError(
+                "Couldn't determine the location of the 'rest' interface."
+            )
 
-        response.raise_for_status()
-
-        return response.content
-
-    def _put_request(self, url: str, data: str) -> bytes:
-        response = requests.put(
-            url,
-            headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self.user, self.password),
-            data=data.encode("utf-8"),
+        return cls(
+            transport=transport,
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            prefix=prefix,
+            parser=parser,
         )
-
-        if response.status_code != requests.codes.ok:
-            response.raise_for_status()
-
-        return response.content
-
-    def _delete_request(self, url: str) -> None:
-        response = requests.delete(
-            url,
-            headers={"Content-Type": "application/xml"},
-            auth=HTTPBasicAuth(self.user, self.password),
-        )
-
-        if response.status_code != requests.codes.ok:
-            response.raise_for_status()
 
     @staticmethod
-    def _parse_item(node: etree._Element) -> QueryResultItem:
-        return QueryResultItem(
-            node.attrib["absid"],
-            node.attrib["nodeid"],
-            node.attrib["path"],
-            TagNode(node[0], {}),
-        )
+    def _probe_transport_and_port(
+        host: str, port: Optional[int]
+    ) -> Optional[Tuple[str, int]]:
+        for transport, default_port in TRANSPORT_PROTOCOLS.items():
+            _port = port or default_port
+            try:
+                requests.head(f"{transport}://{host}:{_port}/")
+            except requests.exceptions.ConnectionError:
+                pass
+            else:
+                return transport, _port
+        return None
+
+    @staticmethod
+    def _probe_instance_prefix(base: str, path: str) -> Optional[str]:
+        path_parts = PurePosixPath(path).parts[1:]
+        encountered_collection = False
+
+        # looks for longest path as different instances could have overlapping prefixes
+        # will return false results if a path contained a part named "rest"
+        for i in range(len(path_parts), 0, -1):
+            response = requests.get(f"{base}/{'/'.join(path_parts[:i])}/rest/")
+
+            if response.status_code == 401:
+                raise SnakesistConfigError("Failed authentication.")
+
+            if not content_type_is_xml(response.headers.get("Content-Type", "")):
+                if encountered_collection:
+                    break
+                else:
+                    continue
+
+            qualified_name = etree.QName(etree.fromstring(response.content))
+            if (
+                qualified_name.namespace == EXISTDB_NAMESPACE
+                and qualified_name.localname == "result"
+            ):
+                encountered_collection = True
+            elif encountered_collection:
+                break
+
+        if encountered_collection:
+            return "/".join(path_parts[:i])
+        else:
+            return None
 
     @property
     def base_url(self) -> str:
@@ -273,6 +304,13 @@ class ExistClient:
         The base URL pointing to the eXist instance.
         """
         return self.__base_url
+
+    @property
+    def transport(self):
+        """
+        The used transport protocol
+        """
+        return self.__connection_props.transport
 
     @property
     def host(self):
@@ -307,70 +345,75 @@ class ExistClient:
         """
         The URL prefix of the database
         """
-        return self.__connection_props.prefix
+        return str(self.__connection_props.prefix)
 
     @property
     def root_collection(self) -> str:
         """
         The configured root collection for database queries.
         """
-        return self._root_collection
+        return str(self.__root_collection)
 
     @root_collection.setter
-    def root_collection(self, collection: str):
+    def root_collection(self, path: str):
         """
         Set the path to the root collection for database
         queries (e. g. '/db/foo/bar/').
         """
-        self._root_collection = collection
+        self.__root_collection = _mangle_path(path)
 
     @property
-    def root_collection_url(self):
+    def root_collection_url(self) -> str:
         """
         The URL pointing to the configured root collection.
         """
-        data_path = self._join_paths("/rest/", self.root_collection)
-        url = urljoin(self.base_url, data_path)
-        return url
+        result = f"{self.__base_url}/rest/{self.__root_collection}"
+        if result.endswith("/."):
+            return result[:-2]
+        else:
+            return result
 
     def query(self, query_expression: str) -> etree._Element:
         """
-        Make a database query using XQuery
+        Make a database query using XQuery. The configured root collection
+        will be the starting point of the query.
 
         :param query_expression: XQuery expression
         :return: The query result as a ``delb.Document`` object.
         """
-        response_string = self._get_request(
-            self.root_collection_url, query=query_expression
-        )
-        return etree.fromstring(response_string, parser=self.parser)
 
-    def create_resource(self, document_path: str, node: str):
-        """
-        Write a new document node to the database.
+        params = {
+            "_howmany": "0",
+            "_indent": "no",
+            "_wrap": "yes",
+            "_query": query_expression,
+        }
 
-        :param document_path: Path to collection where document will be stored,
-                                relative to the configured root collection
-        :param node: XML string
-        """
-        path = self._join_paths(self.root_collection, document_path)
-        self.query(
-            f"let $collection-check := if (not(xmldb:collection-available('{path}'))) "
-            f"then (xmldb:create-collection('/', '{path}')) else () "
-            f"return xmldb:store('/{path}', '{uuid4().hex}', {node})"
+        response = requests.get(
+            self.root_collection_url,
+            headers={"Content-Type": "application/xml"},
+            params=params,
         )
 
-    def retrieve_resources(self, xpath: str) -> List[Resource]:
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            raise SnakesistReadError("Unhandled query error.") from e
+
+        return etree.fromstring(response.content, parser=self.parser)
+
+    def xpath(self, expression: str) -> List[NodeResource]:
         """
         Retrieve a set of resources from the database using
-        an XPath expression.
+        an XPath expression. The configured root collection
+        will be the starting point of the query.
 
-        :param xpath: XPath expression (whatever version your eXist
-                      instance supports via its RESTful API)
+        :param expression: XPath expression (whatever version your eXist
+                           instance supports via its RESTful API)
         :return: The query results as a list of :class:`Resource` objects.
         """
         results_node = self.query(
-            f"for $node in {xpath} "
+            f"for $node in {expression} "
             f"return <snakesist:result xmlns:snakesist='{XML_NAMESPACE}'"
             f"nodeid='{{util:node-id($node)}}' "
             f"absid='{{util:absolute-resource-id($node)}}' "
@@ -379,15 +422,17 @@ class ExistClient:
         )
         resources = []
         for item in fetch_snakesist_results(results_node):
-            query_result = self._parse_item(item)
-            resources.append(
-                DocumentResource(exist_client=self, query_result=query_result)
-                if query_result.node_id == "1"
-                else NodeResource(exist_client=self, query_result=query_result)
+            query_result = QueryResultItem(
+                item.attrib["absid"],
+                item.attrib["nodeid"],
+                item.attrib["path"],
+                TagNode(item[0], {}),
             )
+            resources.append(NodeResource(exist_client=self, query_result=query_result))
         return resources
 
-    def retrieve_resource(self, abs_resource_id: str, node_id: str = "") -> Resource:
+    # TODO? rename
+    def retrieve_resource(self, abs_resource_id: str, node_id: str) -> NodeResource:
         """
         Retrieve a single resource by its internal database IDs.
 
@@ -401,19 +446,14 @@ class ExistClient:
                 f"return util:collection-name($node) || '/' || util:document-name($node)"
             )
         )[0].text
-        assert isinstance(path, str), path
 
-        if node_id:
-            query = (
-                "util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), "
-                "'{node_id}')"
-            )
-        else:
-            query = f"util:get-resource-by-absolute-id({abs_resource_id})"
-        queried_node = self.query(query)[0]
-        assert isinstance(queried_node, etree._Element)
+        query = (
+            "util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), "
+            "'{node_id}')"
+        )
+        queried_node: etree._Element = self.query(query)[0]
 
-        return DocumentResource(
+        return NodeResource(
             self,
             QueryResultItem(abs_resource_id, node_id, path, TagNode(queried_node, {})),
         )
@@ -431,16 +471,6 @@ class ExistClient:
             f"with {data}"
         )
 
-    def update_document(self, data: str, document_path: str) -> None:
-        """
-        Replace a document root node with an updated version.
-
-        :param data: A well-formed XML string containing the node to replace the old one with.
-        :param document_path: The path pointing to the document (relative to the REST endpoint, e. g. '/db/foo/bar')
-        """
-        url = self._join_paths(self.base_url, "rest", document_path)
-        self._put_request(url, data)
-
     def delete_node(self, abs_resource_id: str, node_id: str = "") -> None:
         """
         Remove a node from the database.
@@ -456,9 +486,17 @@ class ExistClient:
 
     def delete_document(self, document_path: str) -> None:
         """
-        Remove a document from a database.
+        Removes a document from the associated database.
 
-        :param document_path: The path pointing to the document (relative to the REST endpoint, e. g. '/db/foo/bar')
+        :param document_path: The path pointing to the document within the root
+                              collection.
         """
-        url = self._join_paths(self.base_url, "rest", document_path)
-        self._delete_request(url)
+        response = requests.delete(
+            f"{self.root_collection_url}/{_mangle_path(document_path)}"
+        )
+        if response.status_code == 404:
+            raise SnakesistNotFound(f"Document '{document_path}' not found.")
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            raise SnakesistWriteError("Unhandled error while deleting.") from e

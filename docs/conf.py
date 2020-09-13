@@ -51,6 +51,7 @@ exclude_patterns = []
 
 intersphinx_mapping = {
     'delb': ('https://delb.readthedocs.io/en/latest/', None),
+    'cpython': ('https://docs.python.org', None)
 }
 
 

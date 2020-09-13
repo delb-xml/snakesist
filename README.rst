@@ -22,29 +22,40 @@ It supports basic CRUD operations and uses `delb <https://delb.readthedocs.io>`_
 
     pip install snakesist
 
-
-Usage example
--------------
+``snakesist`` allows you to access individual documents from the database with a ``delb.Document``, either by simply using a URL
 
 .. code-block:: python
 
-    from snakesist import ExistClient
+    >>> from delb import Document
 
-    db = ExistClient()
+    >>> manifest = Document("existdb://admin:@localhost:8080/exist/db/manifestos/dada_manifest.xml")
+    >>> [header.full_text for header in manifest.xpath("//head")]
+    ["Hugo Ball", "Das erste dadaistische Manifest"]
 
-    db.root_collection = '/db/foo/bar'
-    # the client will only query from this point downwards
+or by instantiating a database client which you can subsequently reuse
 
-    names = db.retrieve_resources('//*:persName')
-    # note the namespace wildcard in the XPath expression
+.. code-block:: python
 
-    # append 'Python' to all names which are 'Monty' and delete the rest
-    for name in names:
-        if name.node.full_text == 'Monty':
-            name.node.append_child(' Python')
-            name.update_push()
-        else:
-            name.delete()
+    >>> from snakesist import ExistClient
+
+    >>> my_local_db = ExistClient(host="localhost", port=8080, user="admin", password="", root_collection="/db/manifestos")
+    >>> dada_manifest = Document("dada_manifest.xml", existdb_client=my_local_db)
+    >>> [header.full_text for header in dada_manifest.xpath("//head")]
+    ["Hugo Ball", "Das erste dadaistische Manifest"]
+    >>> communist_manifest = Document("communist_manifest.xml", existdb_client=my_local_db)
+    >>> communist_manifest.xpath("//head").first.full_text
+    "Manifest der Kommunistischen Partei"
+
+
+and not only for accessing individual documents, but also for querying data across multiple documents
+
+.. code-block:: python
+
+    >>> all_headers = my_local_db.xpath("//*:head")
+    >>> [header.full_text for header in all_headers]
+    ["Hugo Ball", "Das erste dadaistische Manifest", "Manifest der Kommunistischen Partei", "I. Bourgeois und Proletarier.", "II. Proletarier und Kommunisten", "III. Sozialistische und kommunistische Literatur", "IV. Stellung der Kommunisten zu den verschiedenen oppositionellen Parteien"]
+
+You can of course also modify and store documents back into the database or create new ones and store them.
 
 
 Your eXist instance
@@ -57,4 +68,6 @@ for database queries. This means that allowing database queries using the
 backend. eXist allows this by default, so if you haven't configured your
 instance otherwise, don't worry about it.
 
-``snakesist`` is tested with eXist 4.7.1 and is not compatible yet with eXist 5.0.0.
+Please note that ``snakesist`` is tested with eXist 4.7.1 and is not compatible yet
+with version 5. The bug preventing ``snakesist`` to be compatible with the newest major eXist
+version will be fixed with the release of eXist 5.3.0.

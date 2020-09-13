@@ -4,5 +4,16 @@ services:
   existdb:
     build: .
     ports:
-      - "8080"
+      - "8080:8080"
 
+  proxy:
+    image: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/cert.pem:/etc/ssl/certs/localhost.pem:ro
+      - ./nginx/key.pem:/etc/ssl/private/localhost.pem:ro
+    depends_on:
+      - existdb
