@@ -32,7 +32,7 @@ It supports basic CRUD operations and uses `delb <https://delb.readthedocs.io>`_
     >>> [header.full_text for header in manifest.xpath("//head")]
     ["Hugo Ball", "Das erste dadaistische Manifest"]
 
-or by instantiating a database client which you can subsequently reuse
+or by passing a relative path to the document along with a database client which you can subsequently reuse
 
 .. code-block:: python
 
