@@ -9,8 +9,8 @@ from typing import List, NamedTuple, Optional, Tuple
 from urllib.parse import urlparse
 
 import requests
-from _delb.nodes import NodeBase, TagNode
-from lxml import cssselect, etree  # type: ignore
+from _delb.nodes import NodeBase, _wrapper_cache
+from lxml import cssselect, etree
 
 from snakesist.exceptions import (
     SnakesistConfigError,
@@ -426,7 +426,7 @@ class ExistClient:
                 item.attrib["absid"],
                 item.attrib["nodeid"],
                 item.attrib["path"],
-                TagNode(item[0], {}),
+                _wrapper_cache(item[0]),
             )
             resources.append(NodeResource(exist_client=self, query_result=query_result))
         return resources
@@ -455,7 +455,7 @@ class ExistClient:
 
         return NodeResource(
             self,
-            QueryResultItem(abs_resource_id, node_id, path, TagNode(queried_node, {})),
+            QueryResultItem(abs_resource_id, node_id, path, _wrapper_cache(queried_node)),
         )
 
     def update_node(self, data: str, abs_resource_id: str, node_id: str) -> None:

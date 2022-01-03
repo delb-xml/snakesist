@@ -19,17 +19,18 @@ keywords = ["xml", "exist-db", "client"]
 snakesist = "snakesist.delb_plugins"
 
 [tool.poetry.dependencies]
-python = "^3.6"
-delb = { version="^0.2", extras=["https-loader"] }
+python = "^3.7"
+delb = { version="^0.3", extras=["https-loader"] }
 
 [tool.poetry.dev-dependencies]
+delb-reference-plugins = "^0.3"
+docker-compose = "^1.29.2"
+lxml-stubs = "*"
 pytest = "^6.2"
+pytest-docker = "^0.10.3"
 pytest-mypy = "^0.8.1"
 sphinx = "*"
 sphinx_rtd_theme = "^0.4.3"
-pytest-docker = "^0.10.3"
-docker-compose = "^1.29.2"
-delb-reference-plugins = "^0.2"
 types-requests = "^2.27.5"
 
 [build-system]

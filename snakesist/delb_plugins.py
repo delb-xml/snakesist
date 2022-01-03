@@ -11,6 +11,7 @@ from _delb.plugins import plugin_manager, DocumentExtensionHooks
 from _delb.plugins.core_loaders import ftp_http_loader
 from _delb.plugins.https_loader import https_loader
 from _delb.typing import LoaderResult
+from lxml import etree
 
 from snakesist.exceptions import (
     SnakesistConfigError,
@@ -89,7 +90,7 @@ def load_from_url(source: Any, config: SimpleNamespace) -> LoaderResult:
         PurePosixPath(f"/{config.existdb.client.prefix}")
     )
     result = load_from_path(path, config)
-    if isinstance(result, tuple):
+    if isinstance(result, etree._ElementTree):
         config.source_url = source
     return result
 
@@ -148,14 +149,15 @@ class ExistDBExtension(DocumentExtensionHooks):
     # for mypy:
     config: SimpleNamespace
 
-    def _init_config(self, config_args: Dict[str, Any]):
-        client = config_args.pop("existdb_client", None)
+    @classmethod
+    def _init_config(cls, config: SimpleNamespace, kwargs: Dict[str, Any]):
+        client = kwargs.pop("existdb_client", None)
         if not (client is None or isinstance(client, ExistClient)):
             raise ValueError("Invalid object passed as existdb_client.")
-        self.config.existdb = SimpleNamespace(
+        config.existdb = SimpleNamespace(
             client=client, collection=PurePosixPath("."), filename=""
         )
-        super()._init_config(config_args)
+        super()._init_config(config, kwargs)
 
     @property
     def existdb_collection(self) -> str:
