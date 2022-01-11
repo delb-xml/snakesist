@@ -702,14 +702,6 @@ python-versions = "*"
 
 [[package]]
 name = "tomli"
-version = "1.2.3"
-description = "A lil' TOML parser"
-category = "dev"
-optional = false
-python-versions = ">=3.6"
-
-[[package]]
-name = "tomli"
 version = "2.0.0"
 description = "A lil' TOML parser"
 category = "dev"
@@ -723,6 +715,25 @@ description = "a fork of Python 2 and 3 ast modules with type comment support"
 category = "dev"
 optional = false
 python-versions = ">=3.6"
+
+[[package]]
+name = "types-requests"
+version = "2.27.5"
+description = "Typing stubs for requests"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+types-urllib3 = "<1.27"
+
+[[package]]
+name = "types-urllib3"
+version = "1.26.4"
+description = "Typing stubs for urllib3"
+category = "dev"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "typing-extensions"
@@ -771,7 +782,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "aa26444b237803d7fc1b3272c208a7ae6e2fe96c9e8b618f11a6cdc508958ed2"
+content-hash = "fe74f216170338a9e2ffcee1a5bd174cee00ac96c0fefa26fb75e9daabacd603"
 
 [metadata.files]
 alabaster = [
@@ -1289,8 +1300,6 @@ texttable = [
     {file = "texttable-1.6.4.tar.gz", hash = "sha256:42ee7b9e15f7b225747c3fa08f43c5d6c83bc899f80ff9bae9319334824076e9"},
 ]
 tomli = [
-    {file = "tomli-1.2.3-py3-none-any.whl", hash = "sha256:e3069e4be3ead9668e21cb9b074cd948f7b3113fd9c8bba083f48247aab8b11c"},
-    {file = "tomli-1.2.3.tar.gz", hash = "sha256:05b6166bff487dc068d322585c7ea4ef78deed501cc124060e0f238e89a9231f"},
     {file = "tomli-2.0.0-py3-none-any.whl", hash = "sha256:b5bde28da1fed24b9bd1d4d2b8cba62300bfb4ec9a6187a957e8ddb9434c5224"},
     {file = "tomli-2.0.0.tar.gz", hash = "sha256:c292c34f58502a1eb2bbb9f5bbc9a5ebc37bee10ffb8c2d6bbdfa8eb13cc14e1"},
 ]
@@ -1314,6 +1323,14 @@ typed-ast = [
     {file = "typed_ast-1.5.1-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:a2b8d7007f6280e36fa42652df47087ac7b0a7d7f09f9468f07792ba646aac2d"},
     {file = "typed_ast-1.5.1-cp39-cp39-win_amd64.whl", hash = "sha256:b6d17f37f6edd879141e64a5db17b67488cfeffeedad8c5cec0392305e9bc775"},
     {file = "typed_ast-1.5.1.tar.gz", hash = "sha256:484137cab8ecf47e137260daa20bafbba5f4e3ec7fda1c1e69ab299b75fa81c5"},
+]
+types-requests = [
+    {file = "types-requests-2.27.5.tar.gz", hash = "sha256:a67dc1a8512312b8cb89f3ba95f9a0e69ef3436ae77c9bd4f328cd88f17adda2"},
+    {file = "types_requests-2.27.5-py3-none-any.whl", hash = "sha256:9c9390b18b222956155af6678570f452edafa3bb94bd5a4efe67da1105aa128c"},
+]
+types-urllib3 = [
+    {file = "types-urllib3-1.26.4.tar.gz", hash = "sha256:35c17be09e1bcef3b1e2101c5172b97cdb78330915973c741f4c1979d8405ef9"},
+    {file = "types_urllib3-1.26.4-py3-none-any.whl", hash = "sha256:61a0099899b1472bfbae8ee6ad196950aac46705b99216188aa962ad1e514ed5"},
 ]
 typing-extensions = [
     {file = "typing_extensions-4.0.1-py3-none-any.whl", hash = "sha256:7f001e5ac290a0c0401508864c7ec868be4e701886d5b573a9528ed3973d9d3b"},
