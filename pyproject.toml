@@ -23,12 +23,12 @@ python = "^3.6"
 delb = { version="^0.2", extras=["https-loader"] }
 
 [tool.poetry.dev-dependencies]
-pytest = "^3.0"
-pytest-mypy = "^0.4.1"
+pytest = "^6.2"
+pytest-mypy = "^0.8.1"
 sphinx = "*"
 sphinx_rtd_theme = "^0.4.3"
-pytest-docker = "^0.7.2"
-docker-compose = "^1.26.0"
+pytest-docker = "^0.10.3"
+docker-compose = "^1.29.2"
 delb-reference-plugins = "^0.2"
 types-requests = "^2.27.5"
 
