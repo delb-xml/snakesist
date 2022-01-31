@@ -11,8 +11,8 @@ snakesist
     :target: https://snakesist.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. image:: https://travis-ci.org/03b8/snakesist.svg?branch=master
-    :target: https://travis-ci.org/03b8/snakesist
+.. image:: https://github.com/delb-xml/snakesist/actions/workflows/tests.yml/badge.svg
+    :target: https://github.com/delb-xml/snakesist/actions/workflows/tests.yml
 
 
 ``snakesist`` is a Python database interface for `eXist-db <https://exist-db.org>`_.
