@@ -1,3 +1,5 @@
+import uuid
+
 import pytest  # type: ignore
 import requests
 
@@ -75,3 +77,14 @@ def test_url_parsing(url, properties):
     assert client.host == properties[3]
     assert client.port == properties[4]
     assert client.prefix == properties[5]
+
+
+@pytest.mark.parametrize("text_length", [7000, 8000, 9000, 10000])
+def test_query_with_lengthy_contents(test_client, text_length):
+    long_paragraph = "a" * text_length
+    Document(
+        f'<example id="t8"><p>{long_paragraph}</p></example>', existdb_client=test_client
+    ).existdb_store(filename=f"{uuid.uuid4()}.xml")
+
+    retrieved_nodes = test_client.xpath(f'//p[contains(., "{long_paragraph}")]')
+    assert len(retrieved_nodes) == 1
