@@ -75,3 +75,33 @@ def test_url_parsing(url, properties):
     assert client.host == properties[3]
     assert client.port == properties[4]
     assert client.prefix == properties[5]
+
+
+def test_query_with_lengthy_contents(test_client):
+    long_paragraph = (
+        "<p>All fully developed machinery consists of three essentially different"
+        " parts, the motor mechanism, the transmitting mechanism, and finally the"
+        " tool or working machine. The motor mechanism is that which puts the who"
+        "le in motion. It either generates its own motive power, like the steam-e"
+        "ngine, the caloric engine, the electromagnetic machine, &c., or it recei"
+        "ves its impulse from some already existing natural force, like the water"
+        "-wheel from a head of water, the wind-mill from wind, &c. The transmitti"
+        "ng mechanism, composed of fly-wheels, shafting, toothed wheels, pullies,"
+        " straps, ropes, bands, pinions, and gearing of the most varied kinds, re"
+        "gulates the motion, changes its form where necessary, as for instance, f"
+        "rom linear to circular, and divides and distributes it among the working"
+        " machines. These two first parts of the whole mechanism are there, solel"
+        "y for putting the working machines in motion, by means of which motion t"
+        "he subject of labour is seized upon and modified as desired. The tool or"
+        " working machine is that part of the machinery with which the industrial"
+        " revolution of the 18th century started. And to this day it constantly s"
+        "erves as such a starting-point, whenever a handicraft, or a manufacture,"
+        " is turned into an industry carried on by machinery.</p>"
+    )
+    Document(
+        f'<example id="t8">{long_paragraph}</example>', existdb_client=test_client
+    ).existdb_store(filename="document_3.xml")
+
+    retrieved_nodes = test_client.xpath("//p")
+    retrieved_nodes_str = [str(node) for node in retrieved_nodes]
+    assert long_paragraph in retrieved_nodes_str
