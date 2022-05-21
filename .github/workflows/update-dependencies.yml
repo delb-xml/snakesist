@@ -1,0 +1,33 @@
+name: Update dependencies
+on:
+  schedule:
+    - cron: "6 8 26 * *"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.PUSH_TOKEN }}
+      - uses: actions/setup-python@v3
+
+      - uses: abatilo/actions-poetry@v2.1.4
+      - run: poetry update --lock
+
+      - id: commit-and-push
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Updates dependencies
+
+      - if: ${{ steps.commit-and-push.outputs.changes_detected == false }}
+        run: gh run cancel ${{ github.run_id }} && tail -f /dev/null
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  run-tests:
+    needs: [update]
+    uses: delb-xml/snakesist/.github/workflows/tests.yml@main
+    with:
+      ref: main
