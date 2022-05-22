@@ -79,12 +79,12 @@ def test_url_parsing(url, properties):
     assert client.prefix == properties[5]
 
 
-@pytest.mark.parametrize("text_length", [7000, 8000, 9000, 10000])
-def test_query_with_lengthy_contents(test_client, text_length):
-    long_paragraph = "a" * text_length
+def test_query_with_lengthy_contents(test_client):
+    document = Document("existdb://localhost/exist/db/apps/test-data/dada_manifest.xml")
+    long_paragraph = document.root.full_text * 5  # 30625 characters total length
     Document(
         f'<example id="t8"><p>{long_paragraph}</p></example>', existdb_client=test_client
-    ).existdb_store(filename=f"{uuid.uuid4()}.xml")
+    ).existdb_store(filename="the_long_dada.xml")
 
     retrieved_nodes = test_client.xpath(f'//p[contains(., "{long_paragraph}")]')
     assert len(retrieved_nodes) == 1
