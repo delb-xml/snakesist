@@ -68,6 +68,7 @@ for database queries. This means that allowing database queries using the
 backend. eXist allows this by default, so if you haven't configured your
 instance otherwise, don't worry about it.
 
-Please note that ``snakesist`` is tested with eXist 4.7.1 and is not compatible yet
-with version 5. The bug preventing ``snakesist`` to be compatible with the newest major eXist
-version will be fixed with the release of eXist 5.3.0.
+``snakesist`` is currently tested with the following eXist versions:
+- 4.10.0
+- 5.4.1
+- 6.0.1
