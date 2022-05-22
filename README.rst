@@ -63,8 +63,8 @@ Your eXist instance
 
 ``snakesist`` leverages the
 `eXist RESTful API <https://www.exist-db.org/exist/apps/doc/devguide_rest.xml>`_
-for database queries. This means that allowing database queries using the
-``_query`` parameter of the RESTful API is a requirement in the used eXist-db
+for database queries. This means that allowing database queries using
+POST requests on the RESTful API is a requirement in the used eXist-db
 backend. eXist allows this by default, so if you haven't configured your
 instance otherwise, don't worry about it.
 
