@@ -2,7 +2,10 @@ version: "3.7"
 
 services:
   existdb:
-    build: .
+    build:
+      context: .
+      args:
+        EXIST_VERSION: "${EXIST_VERSION:?The EXIST_VERSION env var has not been set}"
     ports:
       - "8080:8080"
 
