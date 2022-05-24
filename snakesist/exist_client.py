@@ -45,6 +45,20 @@ DEFAULT_PARSER = etree.XMLParser(recover=True)
 EXISTDB_NAMESPACE = "http://exist.sourceforge.net/NS/exist"
 TRANSPORT_PROTOCOLS = {"https": 443, "http": 80}  # the order matters!
 XML_NAMESPACE = "https://snakesist.readthedocs.io/"
+XQUERY_PAYLOAD_TEMPLATE = (
+    '<query '
+    f'xmlns="{EXISTDB_NAMESPACE}" '
+    'start="1" '
+    'max="0" '
+    'cache="no">'
+    '<text> <![CDATA[{query}]]></text>'
+    '<properties>'
+    '<property name="indent" value="no"/>'
+    '<property name="wrap" value="yes"/>'
+    '</properties>'
+    '</query>'
+)
+
 
 
 fetch_resource_paths = cssselect.CSSSelector(
@@ -382,17 +396,10 @@ class ExistClient:
         :return: The query result as a ``delb.Document`` object.
         """
 
-        params = {
-            "_howmany": "0",
-            "_indent": "no",
-            "_wrap": "yes",
-            "_query": query_expression,
-        }
-
-        response = requests.get(
+        response = requests.post(
             self.root_collection_url,
             headers={"Content-Type": "application/xml"},
-            params=params,
+            data=XQUERY_PAYLOAD_TEMPLATE.format(query=query_expression).encode(),
         )
 
         try:

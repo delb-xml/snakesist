@@ -75,3 +75,14 @@ def test_url_parsing(url, properties):
     assert client.host == properties[3]
     assert client.port == properties[4]
     assert client.prefix == properties[5]
+
+
+def test_query_with_lengthy_contents(test_client):
+    document = Document("existdb://localhost/exist/db/apps/test-data/dada_manifest.xml")
+    long_paragraph = document.root.full_text * 5  # 30625 characters total length
+    Document(
+        f'<example id="t8"><p>{long_paragraph}</p></example>', existdb_client=test_client
+    ).existdb_store(filename="the_long_dada.xml")
+
+    retrieved_nodes = test_client.xpath(f'//p[contains(., "{long_paragraph}")]')
+    assert len(retrieved_nodes) == 1
