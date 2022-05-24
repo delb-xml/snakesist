@@ -1,5 +1,3 @@
-import uuid
-
 import pytest  # type: ignore
 import requests
 
