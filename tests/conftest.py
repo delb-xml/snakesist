@@ -1,9 +1,13 @@
+from os import getenv
 from pathlib import Path
 
 import requests
 from pytest import fixture  # type: ignore
 
 from snakesist import ExistClient
+
+
+exist_version_is_verified = False
 
 
 @fixture
@@ -53,4 +57,10 @@ def test_client(db):
         password="",
         root_collection="/db/tests",
     )
+
+    global exist_version_is_verified
+    if not exist_version_is_verified:
+        assert getenv("EXIST_VERSION") == client.query('system:get-version()')[0].text
+        exist_version_is_verified = True
+
     yield client
