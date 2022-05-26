@@ -68,7 +68,10 @@ for database queries. This means that allowing database queries using the
 backend. eXist allows this by default, so if you haven't configured your
 instance otherwise, don't worry about it.
 
-``snakesist`` is currently tested with the following eXist versions:
-- 4.10.0
-- 5.4.1
-- 6.0.1
+We aim to directly support all most recent releases from each major branch.
+Yet, there's no guarantee that releases older than two years will be kept as a
+target for tests. Pleaser refer to the values of
+``jobs/tests/matrix/exist-version`` in the `CI's configuration file`_ for
+what's currently considered.
+
+.. _CI's configuration file: https://github.com/delb-xml/snakesist/blob/main/.github/workflows/tests.yml
