@@ -47,3 +47,5 @@ jobs:
       - run: poetry run pytest --mypy tests
         env:
           EXIST_VERSION: ${{ matrix.exist-version }}
+
+...
