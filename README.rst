@@ -68,6 +68,10 @@ POST requests on the RESTful API is a requirement in the used eXist-db
 backend. eXist allows this by default, so if you haven't configured your
 instance otherwise, don't worry about it.
 
-Please note that ``snakesist`` is tested with eXist 4.7.1 and is not compatible yet
-with version 5. The bug preventing ``snakesist`` to be compatible with the newest major eXist
-version will be fixed with the release of eXist 5.3.0.
+We aim to directly support all most recent releases from each major branch.
+Yet, there's no guarantee that releases older than two years will be kept as a
+target for tests. Pleaser refer to the values of
+``jobs/tests/matrix/exist-version`` in the `CI's configuration file`_ for
+what's currently considered.
+
+.. _CI's configuration file: https://github.com/delb-xml/snakesist/blob/main/.github/workflows/tests.yml
