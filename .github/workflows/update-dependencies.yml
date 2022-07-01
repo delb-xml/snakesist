@@ -13,7 +13,7 @@ jobs:
           token: ${{ secrets.PUSH_TOKEN }}
       - uses: actions/setup-python@v3
 
-      - uses: abatilo/actions-poetry@v2.1.4
+      - uses: abatilo/actions-poetry@v2.1.5
       - run: poetry update --lock
 
       - id: commit-and-push
