@@ -20,10 +20,10 @@ snakesist = "snakesist.delb_plugins"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-delb = { version="^0.3", extras=["https-loader"] }
+delb = { version="^0.4", extras=["https-loader"] }
 
 [tool.poetry.dev-dependencies]
-delb-reference-plugins = "^0.3"
+delb-reference-plugins = "^0.4.0rc1"
 docker-compose = "^1.29.2"
 lxml-stubs = "*"
 pytest = "^6.2"

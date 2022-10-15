@@ -1,5 +1,5 @@
-import pytest  # type: ignore
-import requests
+import pytest
+import httpx
 
 from delb import Document, FailedDocumentLoading
 
@@ -13,11 +13,11 @@ def test_exist_client_delete_node(rest_base_url, test_client):
     ).existdb_store(filename="foo.xml")
 
     xq = "let $node := //deletee return util:absolute-resource-id($node)"
-    abs_res_id = requests.get(f"{rest_base_url}&_query={xq}").content.decode()
+    abs_res_id = httpx.get(f"{rest_base_url}&_query={xq}").content.decode()
     xq = "let $node := //deletee return util:node-id($node)"
-    node_id = requests.get(f"{rest_base_url}&_query={xq}").content.decode()
+    node_id = httpx.get(f"{rest_base_url}&_query={xq}").content.decode()
     test_client.delete_node(abs_res_id, node_id)
-    response = requests.get(f"{rest_base_url}&_query=//example[@id='t4']")
+    response = httpx.get(f"{rest_base_url}&_query=//example[@id='t4']")
     node = response.content.decode()
     assert node == '<example id="t4">i stay</example>'
 
@@ -81,7 +81,8 @@ def test_query_with_lengthy_contents(test_client):
     document = Document("existdb://localhost/exist/db/apps/test-data/dada_manifest.xml")
     long_paragraph = document.root.full_text * 5  # 30625 characters total length
     Document(
-        f'<example id="t8"><p>{long_paragraph}</p></example>', existdb_client=test_client
+        f'<example id="t8"><p>{long_paragraph}</p></example>',
+        existdb_client=test_client,
     ).existdb_store(filename="the_long_dada.xml")
 
     retrieved_nodes = test_client.xpath(f'//p[contains(., "{long_paragraph}")]')

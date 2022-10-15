@@ -1,4 +1,4 @@
-import pytest  # type: ignore
+import pytest
 
 from delb import Document, FailedDocumentLoading
 from snakesist import ExistClient
@@ -36,7 +36,10 @@ def test_load_document_with_client(test_client):
 
 def test_store_document(test_client):
     test_client.root_collection = "/db/apps/"
-    document = Document("<test/>", existdb_client=test_client,)
+    document = Document(
+        "<test/>",
+        existdb_client=test_client,
+    )
     document.existdb_store(collection="/test_collection/", filename="new_document.xml")
 
     document = Document(
@@ -44,7 +47,8 @@ def test_store_document(test_client):
     )
     document.existdb_store(replace_existing=True)
     document.existdb_store(
-        collection="/another/collection/", filename="another_name.xml",
+        collection="/another/collection/",
+        filename="another_name.xml",
     )
     assert document.existdb_collection == "/db/apps/test-data"
     assert document.existdb_filename == "dada_manifest.xml"
