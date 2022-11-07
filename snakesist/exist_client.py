@@ -325,42 +325,42 @@ class ExistClient:
         return self.__base_url
 
     @property
-    def transport(self):
+    def transport(self) -> str:
         """
         The used transport protocol
         """
         return self.__connection_props.transport
 
     @property
-    def host(self):
+    def host(self) -> str:
         """
         The database hostname
         """
         return self.__connection_props.host
 
     @property
-    def port(self):
+    def port(self) -> str:
         """
         The database port number
         """
         return self.__connection_props.port
 
     @property
-    def user(self):
+    def user(self) -> str:
         """
         The user name used to connect to the database
         """
         return self.__connection_props.user
 
     @property
-    def password(self):
+    def password(self) -> str:
         """
         The password used to connect to the database
         """
         return self.__connection_props.password
 
     @property
-    def prefix(self):
+    def prefix(self) -> str:
         """
         The URL prefix of the database
         """
