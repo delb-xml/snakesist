@@ -21,6 +21,7 @@ snakesist = "snakesist.delb_plugins"
 [tool.poetry.dependencies]
 python = "^3.7"
 delb = { version="^0.4", extras=["https-loader"] }
+importlib_metadata = { version="*", python = "<3.8" }
 
 [tool.poetry.dev-dependencies]
 delb-reference-plugins = "^0.4.0rc1"
