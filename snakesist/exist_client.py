@@ -8,8 +8,9 @@ from pathlib import PurePosixPath
 from typing import List, NamedTuple, Optional, Tuple
 from urllib.parse import urlparse
 
-import requests
+import httpx
 from _delb.nodes import NodeBase, _wrapper_cache
+from _delb.parser import ParserOptions, _compat_get_parser
 from lxml import cssselect, etree
 
 from snakesist.exceptions import (
@@ -46,19 +47,18 @@ EXISTDB_NAMESPACE = "http://exist.sourceforge.net/NS/exist"
 TRANSPORT_PROTOCOLS = {"https": 443, "http": 80}  # the order matters!
 XML_NAMESPACE = "https://snakesist.readthedocs.io/"
 XQUERY_PAYLOAD_TEMPLATE = (
-    '<query '
+    "<query "
     f'xmlns="{EXISTDB_NAMESPACE}" '
     'start="1" '
     'max="0" '
     'cache="no">'
-    '<text> <![CDATA[{query}]]></text>'
-    '<properties>'
+    "<text> <![CDATA[{query}]]></text>"
+    "<properties>"
     '<property name="indent" value="no"/>'
     '<property name="wrap" value="yes"/>'
-    '</properties>'
-    '</query>'
+    "</properties>"
+    "</query>"
 )
-
 
 
 fetch_resource_paths = cssselect.CSSSelector(
@@ -127,7 +127,7 @@ class NodeResource:
         )
 
     def update_push(self):
-        """ Writes the node to the database. """
+        """Writes the node to the database."""
         self._exist_client.update_node(
             data=str(self.node),
             abs_resource_id=self._abs_resource_id,
@@ -135,7 +135,7 @@ class NodeResource:
         )
 
     def delete(self):
-        """ Deletes the node from the database. """
+        """Deletes the node from the database."""
         self._exist_client.delete_node(
             abs_resource_id=self._abs_resource_id, node_id=self._node_id
         )
@@ -179,7 +179,8 @@ class ExistClient:
     :param prefix: configured path prefix for the eXist instance
     :param root_collection: a path to a collection which will be used as root for all
                             document paths
-    :param parser: an lxml etree.XMLParser instance to parse query results
+    :param parser: deprecated
+    :param parser_options: a named tuple from delb to define the XML parser's behaviour
     """
 
     def __init__(
@@ -191,7 +192,8 @@ class ExistClient:
         password: str = DEFAULT_PASSWORD,
         prefix: str = "exist",
         root_collection: str = "/",
-        parser: etree.XMLParser = DEFAULT_PARSER,
+        parser: etree.XMLParser = None,
+        parser_options: ParserOptions = None,
     ):
         _prefix = _mangle_path(prefix)
         self.__connection_props = ConnectionProps(
@@ -203,7 +205,10 @@ class ExistClient:
             prefix=_prefix,
         )
         self.__base_url = f"{transport}://{user}:{password}@{host}:{port}/{_prefix}"
-        self.parser = parser
+        self.http_client = httpx.Client(http2=True)
+        self.parser, _ = _compat_get_parser(
+            parser=parser, parser_options=parser_options, collapse_whitesppace=True
+        )
         self.root_collection = root_collection
 
     @classmethod
@@ -272,8 +277,8 @@ class ExistClient:
         for transport, default_port in TRANSPORT_PROTOCOLS.items():
             _port = port or default_port
             try:
-                requests.head(f"{transport}://{host}:{_port}/")
-            except requests.exceptions.ConnectionError:
+                httpx.head(f"{transport}://{host}:{_port}/")
+            except httpx.TransportError:
                 pass
             else:
                 return transport, _port
@@ -287,7 +292,7 @@ class ExistClient:
         # looks for longest path as different instances could have overlapping prefixes
         # will return false results if a path contained a part named "rest"
         for i in range(len(path_parts), 0, -1):
-            response = requests.get(f"{base}/{'/'.join(path_parts[:i])}/rest/")
+            response = httpx.get(f"{base}/{'/'.join(path_parts[:i])}/rest/")
 
             if response.status_code == 401:
                 raise SnakesistConfigError("Failed authentication.")
@@ -320,42 +325,42 @@ class ExistClient:
         return self.__base_url
 
     @property
-    def transport(self):
+    def transport(self) -> str:
         """
         The used transport protocol
         """
         return self.__connection_props.transport
 
     @property
-    def host(self):
+    def host(self) -> str:
         """
         The database hostname
         """
         return self.__connection_props.host
 
     @property
-    def port(self):
+    def port(self) -> str:
         """
         The database port number
         """
         return self.__connection_props.port
 
     @property
-    def user(self):
+    def user(self) -> str:
         """
         The user name used to connect to the database
         """
         return self.__connection_props.user
 
     @property
-    def password(self):
+    def password(self) -> str:
         """
         The password used to connect to the database
         """
         return self.__connection_props.password
 
     @property
-    def prefix(self):
+    def prefix(self) -> str:
         """
         The URL prefix of the database
         """
@@ -396,10 +401,10 @@ class ExistClient:
         :return: The query result as a ``delb.Document`` object.
         """
 
-        response = requests.post(
+        response = self.http_client.post(
             self.root_collection_url,
             headers={"Content-Type": "application/xml"},
-            data=XQUERY_PAYLOAD_TEMPLATE.format(query=query_expression).encode(),
+            content=XQUERY_PAYLOAD_TEMPLATE.format(query=query_expression),
         )
 
         try:
@@ -462,7 +467,9 @@ class ExistClient:
 
         return NodeResource(
             self,
-            QueryResultItem(abs_resource_id, node_id, path, _wrapper_cache(queried_node)),
+            QueryResultItem(
+                abs_resource_id, node_id, path, _wrapper_cache(queried_node)
+            ),
         )
 
     def update_node(self, data: str, abs_resource_id: str, node_id: str) -> None:
@@ -498,7 +505,7 @@ class ExistClient:
         :param document_path: The path pointing to the document within the root
                               collection.
         """
-        response = requests.delete(
+        response = self.http_client.delete(
             f"{self.root_collection_url}/{_mangle_path(document_path)}"
         )
         if response.status_code == 404:

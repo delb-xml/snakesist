@@ -6,9 +6,8 @@ from typing import Any, Dict
 from urllib.parse import urlparse
 from warnings import warn
 
-import requests
-from _delb.plugins import plugin_manager, DocumentExtensionHooks
-from _delb.plugins.core_loaders import ftp_http_loader
+import httpx
+from _delb.plugins import plugin_manager, DocumentMixinBase
 from _delb.plugins.https_loader import https_loader
 from _delb.typing import LoaderResult
 from lxml import etree
@@ -96,25 +95,16 @@ def load_from_url(source: Any, config: SimpleNamespace) -> LoaderResult:
 
 
 def load_from_path(source: Any, config: SimpleNamespace) -> LoaderResult:
-    try:
-        if isinstance(source, str):
-            source = _mangle_path(source)
-        if not isinstance(source, PurePosixPath):
-            raise TypeError
-    except Exception:
-        return "The input value is not a proper path."
-    else:
-        path = source
+    path = _mangle_path(source) if isinstance(source, str) else source
+    if not isinstance(path, PurePosixPath):
+        raise TypeError
 
     client: ExistClient = config.existdb.client
     url = f"{client.root_collection_url}/{path}"
 
     try:
-        if client.transport == "https":
-            result = https_loader(url, config)
-        else:  # http
-            result = ftp_http_loader(url, config)
-    except requests.HTTPError as e:
+        result = https_loader(url, config, client=client.http_client)
+    except httpx.HTTPStatusError as e:
         if e.response.status_code == 404:
             raise SnakesistNotFound(f"Document '{path}' not found.")
         raise SnakesistReadError("Could not read from database.") from e
@@ -137,8 +127,7 @@ def ensure_configured_client(method):
     return wrapper
 
 
-@plugin_manager.register_document_extension
-class ExistDBExtension(DocumentExtensionHooks):
+class ExistDBExtension(DocumentMixinBase):
     """
     This class provides extensions to :class:`delb.Document` in order to interact
     with a eXist-db instance.
@@ -146,7 +135,6 @@ class ExistDBExtension(DocumentExtensionHooks):
     See :func:`existdb_loader` on retrieving documents from an eXist-db instance.
     """
 
-    # for mypy:
     config: SimpleNamespace
 
     @classmethod
@@ -221,19 +209,22 @@ class ExistDBExtension(DocumentExtensionHooks):
         else:
             _validate_filename(filename)
 
+        http_client = self.config.existdb.client.http_client
         url = f"{client.root_collection_url}/{collection}/{filename}"
 
-        if not replace_existing and requests.head(url).status_code == 200:
+        if not replace_existing and http_client.head(url).status_code == 200:
             raise SnakesistWriteError(
-                "Document already exists. Overwriting must be explicitly allowed."
+                "Document already exists. Overwriting must be allowed explicitly."
             )
 
-        response = requests.put(
-            url, headers={"Content-Type": "application/xml"}, data=str(self).encode(),
+        response = http_client.put(
+            url,
+            headers={"Content-Type": "application/xml"},
+            content=str(self),
         )
-        if not response.status_code == 201:
-            raise SnakesistWriteError(f"Unexpected response: {response}")
         try:
             response.raise_for_status()
         except Exception as e:
             raise SnakesistWriteError("Unhandled error while storing.") from e
+        if not response.status_code == 201:
+            raise SnakesistWriteError(f"Unexpected response: {response}")

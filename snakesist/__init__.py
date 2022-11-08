@@ -1,4 +1,11 @@
-from pkg_resources import get_distribution
+import sys
+
 from snakesist.exist_client import ExistClient, NodeResource
 
-__version__ = get_distribution("snakesist").version
+if sys.version_info < (3, 8):
+    from importlib_metadata import version
+else:
+    from importlib.metadata import version
+
+
+__version__ = version("snakesist")
