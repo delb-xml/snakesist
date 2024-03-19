@@ -19,7 +19,7 @@ keywords = ["xml", "exist-db", "client"]
 snakesist = "snakesist.delb_plugins"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 delb = { version="^0.4", extras=["https-loader"] }
 importlib_metadata = { version="*", python = "<3.8" }
 
