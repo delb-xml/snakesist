@@ -30,7 +30,7 @@ jobs:
           - "5.4.1"
           - "6.0.1"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref || github.ref }}
       - uses: actions/setup-python@v4
