@@ -27,7 +27,11 @@ jobs:
           - "3.12"
         exist-version:
           - "4.10.0"
+          - "4.11.1"
           - "5.4.1"
+          - "5.5.1"
+          - "6.0.1"
+          - "6.1.0"
           - "6.2.0"
     steps:
       - uses: actions/checkout@v4
