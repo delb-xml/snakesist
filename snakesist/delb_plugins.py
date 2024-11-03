@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import re
 from functools import wraps
 from pathlib import PurePosixPath
 from types import SimpleNamespace
-from typing import Any, Dict
+from typing import Any, Final, Optional
 from urllib.parse import urlparse
 from warnings import warn
 
@@ -21,7 +23,7 @@ from snakesist.exceptions import (
 from snakesist.exist_client import _mangle_path, _validate_filename, ExistClient
 
 
-is_existdb_url = re.compile(r"^existdb(\+https?)?://.+").match
+is_existdb_url: Final = re.compile(r"^existdb(\+https?)?://.+").match
 
 
 @plugin_manager.register_loader()
@@ -138,7 +140,7 @@ class ExistDBExtension(DocumentMixinBase):
     config: SimpleNamespace
 
     @classmethod
-    def _init_config(cls, config: SimpleNamespace, kwargs: Dict[str, Any]):
+    def _init_config(cls, config: SimpleNamespace, kwargs: dict[str, Any]):
         client = kwargs.pop("existdb_client", None)
         if not (client is None or isinstance(client, ExistClient)):
             raise ValueError("Invalid object passed as existdb_client.")
@@ -187,8 +189,8 @@ class ExistDBExtension(DocumentMixinBase):
     @ensure_configured_client
     def existdb_store(
         self,
-        collection: str = None,
-        filename: str = None,
+        collection: Optional[str] = None,
+        filename: Optional[str] = None,
         replace_existing: bool = False,
     ):
         """

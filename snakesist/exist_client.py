@@ -3,9 +3,11 @@
     :synopsis: A module containing basic tools for connecting to eXist.
 """
 
+from __future__ import annotations
+
 import re
 from pathlib import PurePosixPath
-from typing import List, NamedTuple, Optional, Tuple
+from typing import Any, Final, NamedTuple, Optional
 from urllib.parse import urlparse
 
 import httpx
@@ -37,16 +39,16 @@ class ConnectionProps(NamedTuple):
     prefix: PurePosixPath
 
 
-DEFAULT_TRANSPORT = "http"
-DEFAULT_HOST = "localhost"
-DEFAULT_PORT = 8080
-DEFAULT_USER = "admin"
-DEFAULT_PASSWORD = ""
-DEFAULT_PARSER = etree.XMLParser(recover=True)
-EXISTDB_NAMESPACE = "http://exist.sourceforge.net/NS/exist"
-TRANSPORT_PROTOCOLS = {"https": 443, "http": 80}  # the order matters!
-XML_NAMESPACE = "https://snakesist.readthedocs.io/"
-XQUERY_PAYLOAD_TEMPLATE = (
+DEFAULT_TRANSPORT: Final = "http"
+DEFAULT_HOST: Final = "localhost"
+DEFAULT_PORT: Final = 8080
+DEFAULT_USER: Final = "admin"
+DEFAULT_PASSWORD: Final = ""
+DEFAULT_PARSER: Final = etree.XMLParser(recover=True)
+EXISTDB_NAMESPACE: Final = "http://exist.sourceforge.net/NS/exist"
+TRANSPORT_PROTOCOLS: Final = {"https": 443, "http": 80}  # the order matters!
+XML_NAMESPACE: Final = "https://snakesist.readthedocs.io/"
+XQUERY_PAYLOAD_TEMPLATE: Final = (
     "<query "
     f'xmlns="{EXISTDB_NAMESPACE}" '
     'start="1" '
@@ -61,13 +63,13 @@ XQUERY_PAYLOAD_TEMPLATE = (
 )
 
 
-fetch_resource_paths = cssselect.CSSSelector(
+fetch_resource_paths: Final[etree.XPath] = cssselect.CSSSelector(
     "x|result x|value", namespaces={"x": EXISTDB_NAMESPACE}
 )
-fetch_snakesist_results = cssselect.CSSSelector(
+fetch_snakesist_results: Final[etree.XPath] = cssselect.CSSSelector(
     "x|result", namespaces={"x": XML_NAMESPACE}
 )
-content_type_is_xml = re.compile(r"^(application|text)/xml(;.+)?").match
+content_type_is_xml: Final = re.compile(r"^(application|text)/xml(;.+)?").match
 
 
 def _mangle_path(path: str) -> PurePosixPath:
@@ -194,6 +196,7 @@ class ExistClient:
         root_collection: str = "/",
         parser: etree.XMLParser = None,
         parser_options: ParserOptions = None,
+        parser_options: Optional[ParserOptions] = None,
     ):
         _prefix = _mangle_path(prefix)
         self.__connection_props = ConnectionProps(
@@ -235,6 +238,7 @@ class ExistClient:
         user = parsed_url.username or ""
         password = parsed_url.password or ""
         host = parsed_url.hostname
+        assert host is not None
         port = parsed_url.port
 
         if not isinstance(host, str) and host:
@@ -273,7 +277,7 @@ class ExistClient:
     @staticmethod
     def _probe_transport_and_port(
         host: str, port: Optional[int]
-    ) -> Optional[Tuple[str, int]]:
+    ) -> tuple[str, int] | None:
         for transport, default_port in TRANSPORT_PROTOCOLS.items():
             _port = port or default_port
             try:
@@ -339,7 +343,7 @@ class ExistClient:
         return self.__connection_props.host
 
     @property
-    def port(self) -> str:
+    def port(self) -> int:
         """
         The database port number
         """
@@ -414,7 +418,7 @@ class ExistClient:
 
         return etree.fromstring(response.content, parser=self.parser)
 
-    def xpath(self, expression: str) -> List[NodeResource]:
+    def xpath(self, expression: str) -> list[NodeResource]:
         """
         Retrieve a set of resources from the database using
         an XPath expression. The configured root collection
@@ -432,6 +436,7 @@ class ExistClient:
             f"path='{{util:collection-name($node) || '/' || util:document-name($node)}}'>"
             f"{{$node}}</snakesist:result>"
         )
+        assert isinstance(results_node, etree._Element)
         resources = []
         for item in fetch_snakesist_results(results_node):
             query_result = QueryResultItem(
