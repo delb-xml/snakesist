@@ -6,7 +6,16 @@ from delb import compare_trees, Document, FailedDocumentLoading
 from snakesist import ExistClient
 
 
-def test_exist_client_delete_node(rest_base_url, test_client):
+def test_delete_document(rest_base_url, test_client):
+    Document(
+        '<example id="t5">i am to be deleted</example>', existdb_client=test_client
+    ).existdb_store(collection="/bar", filename="foo.xml")
+    test_client.delete_document("/bar/foo.xml")
+    with pytest.raises(FailedDocumentLoading):
+        Document("/bar/foo.xml", existdb_client=test_client)
+
+
+def test_delete_node(rest_base_url, test_client):
     Document(
         '<example id="t4">i stay<deletee> and i am to be deleted</deletee></example>',
         existdb_client=test_client,
@@ -22,13 +31,16 @@ def test_exist_client_delete_node(rest_base_url, test_client):
     assert node == '<example id="t4">i stay</example>'
 
 
-def test_exist_client_delete_document(rest_base_url, test_client):
+def test_query_with_lengthy_contents(test_client):
+    document = Document("existdb://localhost/exist/db/apps/test-data/dada_manifest.xml")
+    long_paragraph = document.root.full_text * 5  # 30625 characters total length
     Document(
-        '<example id="t5">i am to be deleted</example>', existdb_client=test_client
-    ).existdb_store(collection="/bar", filename="foo.xml")
-    test_client.delete_document("/bar/foo.xml")
-    with pytest.raises(FailedDocumentLoading):
-        Document("/bar/foo.xml", existdb_client=test_client)
+        f'<example id="t8"><p>{long_paragraph}</p></example>',
+        existdb_client=test_client,
+    ).existdb_store(filename="the_long_dada.xml")
+
+    retrieved_nodes = test_client.xpath(f'//p[contains(., "{long_paragraph}")]')
+    assert len(retrieved_nodes) == 1
 
 
 @pytest.mark.usefixtures("sample_document")
@@ -38,20 +50,6 @@ def test_retrieve_resource(test_client):
         xpath_result.abs_resource_id, xpath_result.node_id
     )
     assert compare_trees(xpath_result.node, resource.node)
-
-
-def test_xpath(test_client):
-    paragraph_1 = "<p>retrieve me first!</p>"
-    paragraph_2 = "<p>retrieve me too!</p>"
-    Document(
-        f'<example id="t7">{paragraph_1}</example>', existdb_client=test_client
-    ).existdb_store(filename="document_1.xml")
-    Document(paragraph_2, existdb_client=test_client).existdb_store(
-        filename="document_2.xml"
-    )
-
-    retrieved_nodes = test_client.xpath("//p")
-    assert [str(node) for node in retrieved_nodes] == [paragraph_1, paragraph_2]
 
 
 @pytest.mark.usefixtures("db")
@@ -84,13 +82,15 @@ def test_url_parsing(url, properties):
     assert client.prefix == properties[5]
 
 
-def test_query_with_lengthy_contents(test_client):
-    document = Document("existdb://localhost/exist/db/apps/test-data/dada_manifest.xml")
-    long_paragraph = document.root.full_text * 5  # 30625 characters total length
+def test_xpath(test_client):
+    paragraph_1 = "<x>retrieve me first!</x>"
+    paragraph_2 = "<x>retrieve me too!</x>"
     Document(
-        f'<example id="t8"><p>{long_paragraph}</p></example>',
-        existdb_client=test_client,
-    ).existdb_store(filename="the_long_dada.xml")
+        f'<example id="t7">{paragraph_1}</example>', existdb_client=test_client
+    ).existdb_store(filename="document_1.xml")
+    Document(paragraph_2, existdb_client=test_client).existdb_store(
+        filename="document_2.xml"
+    )
 
-    retrieved_nodes = test_client.xpath(f'//p[contains(., "{long_paragraph}")]')
-    assert len(retrieved_nodes) == 1
+    retrieved_nodes = test_client.xpath("//x")
+    assert [str(node) for node in retrieved_nodes] == [paragraph_1, paragraph_2]
