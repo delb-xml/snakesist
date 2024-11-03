@@ -70,8 +70,8 @@ instance otherwise, don't worry about it.
 
 We aim to directly support all most recent releases from each major branch.
 Yet, there's no guarantee that releases older than two years will be kept as a
-target for tests. Pleaser refer to the values of
-``jobs/tests/matrix/exist-version`` in the `CI's configuration file`_ for
+target for tests. Pleaser refer to the values
+``tool.hatch.envs.tests.matrix.existdb_version`` in the `pyproject.toml`_ for
 what's currently considered.
 
-.. _CI's configuration file: https://github.com/delb-xml/snakesist/blob/main/.github/workflows/tests.yml
+.. _pyproject.toml: https://github.com/delb-xml/snakesist/blob/main/pyproject.toml
