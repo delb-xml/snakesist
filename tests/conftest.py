@@ -2,9 +2,20 @@ from os import getenv
 from pathlib import Path
 
 import httpx
+from delb import Document
 from pytest import fixture
 
 from snakesist import ExistClient
+
+
+SAMPLE_DOCUMENT = """\
+<root>
+  <list>
+    <item>one</item>
+    <item>two</item>
+  </list>
+</root>
+"""
 
 
 exist_version_is_verified = False
@@ -43,6 +54,13 @@ def db(docker_ip, docker_services, monkeypatch):
 @fixture(scope="session")
 def docker_compose_file():
     return str(Path(__file__).parent.resolve() / "db_fixture" / "docker-compose.yml")
+
+
+@fixture
+def sample_document(test_client):
+    Document(SAMPLE_DOCUMENT, existdb_client=test_client).existdb_store(
+        filename="sample.xml", replace_existing=True
+    )
 
 
 @fixture

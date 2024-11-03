@@ -1,7 +1,7 @@
 import pytest
 import httpx
 
-from delb import Document, FailedDocumentLoading
+from delb import compare_trees, Document, FailedDocumentLoading
 
 from snakesist import ExistClient
 
@@ -31,7 +31,16 @@ def test_exist_client_delete_document(rest_base_url, test_client):
         Document("/bar/foo.xml", existdb_client=test_client)
 
 
-def test_exist_client_xpath(test_client):
+@pytest.mark.usefixtures("sample_document")
+def test_retrieve_resource(test_client):
+    xpath_result = test_client.xpath("//list")[0]
+    resource = test_client.retrieve_resource(
+        xpath_result.abs_resource_id, xpath_result.node_id
+    )
+    assert compare_trees(xpath_result.node, resource.node)
+
+
+def test_xpath(test_client):
     paragraph_1 = "<p>retrieve me first!</p>"
     paragraph_2 = "<p>retrieve me too!</p>"
     Document(
@@ -42,9 +51,7 @@ def test_exist_client_xpath(test_client):
     )
 
     retrieved_nodes = test_client.xpath("//p")
-    retrieved_nodes_str = [str(node) for node in retrieved_nodes]
-    assert paragraph_1 in retrieved_nodes_str
-    assert paragraph_2 in retrieved_nodes_str
+    assert [str(node) for node in retrieved_nodes] == [paragraph_1, paragraph_2]
 
 
 @pytest.mark.usefixtures("db")
