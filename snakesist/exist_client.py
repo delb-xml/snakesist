@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 import httpx
 from _delb.nodes import NodeBase, _wrapper_cache
-from _delb.parser import ParserOptions, _compat_get_parser
+from _delb.parser import ParserOptions
 from lxml import cssselect, etree
 
 from snakesist.exceptions import (
@@ -194,8 +194,7 @@ class ExistClient:
         password: str = DEFAULT_PASSWORD,
         prefix: str = "exist",
         root_collection: str = "/",
-        parser: etree.XMLParser = None,
-        parser_options: ParserOptions = None,
+        parser: Any = None,  # REMOVE eventually
         parser_options: Optional[ParserOptions] = None,
     ):
         _prefix = _mangle_path(prefix)
@@ -209,13 +208,23 @@ class ExistClient:
         )
         self.__base_url = f"{transport}://{user}:{password}@{host}:{port}/{_prefix}"
         self.http_client = httpx.Client(http2=True)
-        self.parser, _ = _compat_get_parser(
-            parser=parser, parser_options=parser_options, collapse_whitesppace=True
-        )
+        if parser is not None:
+            raise ValueError(
+                "The parsers argument isn't used anymore. Parsers are derived from the"
+                "provided `parser_options`."
+            )
+        if parser_options is None:
+            parser_options = ParserOptions(reduce_whitespace=True)
+        self.parser = parser_options._make_parser()
         self.root_collection = root_collection
 
     @classmethod
-    def from_url(cls, url: str, parser=DEFAULT_PARSER) -> "ExistClient":
+    def from_url(
+        cls,
+        url: str,
+        parser=None,  # REMOVE eventually
+        parser_options: Optional[ParserOptions] = None,
+    ) -> "ExistClient":
         """
         Returns a client instance from the given URL. Path parts that point to something
         beyond the database instance's path prefix are ignored.
@@ -272,6 +281,7 @@ class ExistClient:
             password=password,
             prefix=prefix,
             parser=parser,
+            parser_options=parser_options,
         )
 
     @staticmethod
