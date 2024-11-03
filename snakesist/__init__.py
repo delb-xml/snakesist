@@ -1,11 +1,9 @@
-import sys
+from importlib import metadata
 
 from snakesist.exist_client import ExistClient, NodeResource
 
-if sys.version_info < (3, 8):
-    from importlib_metadata import version
-else:
-    from importlib.metadata import version
+
+__version__ = metadata.version("snakesist")
 
 
-__version__ = version("snakesist")
+__all__ = (ExistClient.__name__, NodeResource.__name__, "__version__")
