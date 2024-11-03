@@ -48,7 +48,6 @@ allow-direct-references = true
 
 [tool.hatch.envs.mypy]
 dependencies = [
-    "lxml-stubs",
     "mypy"
 ]
 skipinstall = true

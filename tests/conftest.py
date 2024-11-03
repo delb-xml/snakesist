@@ -77,7 +77,9 @@ def test_client(db):
 
     global exist_version_is_verified
     if not exist_version_is_verified:
-        assert getenv("EXIST_VERSION") == client.query("system:get-version()")[0].text
+        assert (
+            getenv("EXIST_VERSION") == client.query("system:get-version()")[0].full_text
+        )
         exist_version_is_verified = True
 
     yield client

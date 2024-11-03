@@ -11,9 +11,8 @@ from typing import Any, Final, NamedTuple, Optional
 from urllib.parse import urlparse
 
 import httpx
-from _delb.nodes import NodeBase, _wrapper_cache
+from _delb.nodes import NodeBase, TagNode
 from _delb.parser import ParserOptions
-from lxml import cssselect, etree
 
 from snakesist.exceptions import (
     SnakesistConfigError,
@@ -44,10 +43,9 @@ DEFAULT_HOST: Final = "localhost"
 DEFAULT_PORT: Final = 8080
 DEFAULT_USER: Final = "admin"
 DEFAULT_PASSWORD: Final = ""
-DEFAULT_PARSER: Final = etree.XMLParser(recover=True)
 EXISTDB_NAMESPACE: Final = "http://exist.sourceforge.net/NS/exist"
+SNAKESIST_NAMESPACE: Final = "https://snakesist.readthedocs.io/"
 TRANSPORT_PROTOCOLS: Final = {"https": 443, "http": 80}  # the order matters!
-XML_NAMESPACE: Final = "https://snakesist.readthedocs.io/"
 XQUERY_PAYLOAD_TEMPLATE: Final = (
     "<query "
     f'xmlns="{EXISTDB_NAMESPACE}" '
@@ -63,12 +61,6 @@ XQUERY_PAYLOAD_TEMPLATE: Final = (
 )
 
 
-fetch_resource_paths: Final[etree.XPath] = cssselect.CSSSelector(
-    "x|result x|value", namespaces={"x": EXISTDB_NAMESPACE}
-)
-fetch_snakesist_results: Final[etree.XPath] = cssselect.CSSSelector(
-    "x|result", namespaces={"x": XML_NAMESPACE}
-)
 content_type_is_xml: Final = re.compile(r"^(application|text)/xml(;.+)?").match
 
 
@@ -197,6 +189,11 @@ class ExistClient:
         parser: Any = None,  # REMOVE eventually
         parser_options: Optional[ParserOptions] = None,
     ):
+        if parser is not None:
+            raise ValueError(
+                "The parsers argument isn't used anymore. Parsers are derived from the"
+                "provided `parser_options`."
+            )
         _prefix = _mangle_path(prefix)
         self.__connection_props = ConnectionProps(
             transport=transport,
@@ -208,14 +205,7 @@ class ExistClient:
         )
         self.__base_url = f"{transport}://{user}:{password}@{host}:{port}/{_prefix}"
         self.http_client = httpx.Client(http2=True)
-        if parser is not None:
-            raise ValueError(
-                "The parsers argument isn't used anymore. Parsers are derived from the"
-                "provided `parser_options`."
-            )
-        if parser_options is None:
-            parser_options = ParserOptions(reduce_whitespace=True)
-        self.parser = parser_options._make_parser()
+        self.parser_options = parser_options or ParserOptions(reduce_whitespace=True)
         self.root_collection = root_collection
 
     @classmethod
@@ -317,10 +307,10 @@ class ExistClient:
                 else:
                     continue
 
-            qualified_name = etree.QName(etree.fromstring(response.content))
+            parsed_response = TagNode.parse(response.content)
             if (
-                qualified_name.namespace == EXISTDB_NAMESPACE
-                and qualified_name.localname == "result"
+                parsed_response.namespace == EXISTDB_NAMESPACE
+                and parsed_response.local_name == "result"
             ):
                 encountered_collection = True
             elif encountered_collection:
@@ -406,7 +396,7 @@ class ExistClient:
         else:
             return result
 
-    def query(self, query_expression: str) -> etree._Element:
+    def query(self, query_expression: str) -> TagNode:
         """
         Make a database query using XQuery. The configured root collection
         will be the starting point of the query.
@@ -426,7 +416,7 @@ class ExistClient:
         except Exception as e:
             raise SnakesistReadError("Unhandled query error.") from e
 
-        return etree.fromstring(response.content, parser=self.parser)
+        return TagNode.parse(response.content, parser_options=self.parser_options)
 
     def xpath(self, expression: str) -> list[NodeResource]:
         """
@@ -440,20 +430,26 @@ class ExistClient:
         """
         results_node = self.query(
             f"for $node in {expression} "
-            f"return <snakesist:result xmlns:snakesist='{XML_NAMESPACE}'"
+            f"return <snakesist:result xmlns:snakesist='{SNAKESIST_NAMESPACE}'"
             f"nodeid='{{util:node-id($node)}}' "
             f"absid='{{util:absolute-resource-id($node)}}' "
             f"path='{{util:collection-name($node) || '/' || util:document-name($node)}}'>"
             f"{{$node}}</snakesist:result>"
         )
-        assert isinstance(results_node, etree._Element)
+        assert results_node.namespace == EXISTDB_NAMESPACE
+        assert results_node.local_name == "result"
         resources = []
-        for item in fetch_snakesist_results(results_node):
+        for result_node in results_node.xpath(
+            "//result", namespaces={None: SNAKESIST_NAMESPACE}
+        ):
+            assert isinstance(result_node, TagNode)
+            content_node = result_node[0]
+            assert isinstance(content_node, NodeBase)
             query_result = QueryResultItem(
-                item.attrib["absid"],
-                item.attrib["nodeid"],
-                item.attrib["path"],
-                _wrapper_cache(item[0]),
+                absolute_id=str(result_node["absid"]),
+                node_id=str(result_node["nodeid"]),
+                document_path=str(result_node["path"]),
+                node=content_node,
             )
             resources.append(NodeResource(exist_client=self, query_result=query_result))
         return resources
@@ -467,24 +463,26 @@ class ExistClient:
         :param node_id: The node ID locating a node inside a document (optional).
         :return: The queried node as a ``Resource`` object.
         """
-        path = fetch_resource_paths(
-            self.query(
-                f"let $node := util:get-resource-by-absolute-id({abs_resource_id})"
-                f"return util:collection-name($node) || '/' || util:document-name($node)"
-            )
-        )[0].text
+        query_result = self.query(
+            f"let $node := util:get-resource-by-absolute-id({abs_resource_id})"
+            f"return util:collection-name($node) || '/' || util:document-name($node)"
+        )
+        result_node = query_result.xpath(
+            "//result/value", namespaces={None: EXISTDB_NAMESPACE}
+        ).first
+        assert isinstance(result_node, TagNode)
+        path = result_node.full_text
 
         query = (
             "util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), "
             "'{node_id}')"
         )
-        queried_node: etree._Element = self.query(query)[0]
+        queried_node = self.query(query)[0]
+        assert isinstance(queried_node, TagNode)
 
         return NodeResource(
             self,
-            QueryResultItem(
-                abs_resource_id, node_id, path, _wrapper_cache(queried_node)
-            ),
+            QueryResultItem(abs_resource_id, node_id, path, queried_node),
         )
 
     def update_node(self, data: str, abs_resource_id: str, node_id: str) -> None:
