@@ -91,23 +91,15 @@ class NodeResource:
     def __init__(
         self,
         exist_client: "ExistClient",
-        query_result: Optional[QueryResultItem] = None,
+        query_result: QueryResultItem,
     ):
-        self.node: Optional[NodeBase]
-
         self._exist_client = exist_client
-
-        if query_result:
-            (
-                self._abs_resource_id,
-                self._node_id,
-                self._document_path,
-                self.node,
-            ) = query_result
-        else:
-            self._abs_resource_id = self._node_id = ""
-            self.node = None
-            self._document_path = ""
+        (
+            self._abs_resource_id,
+            self._node_id,
+            self._document_path,
+            self.node,
+        ) = query_result
 
     def __str__(self):
         return str(self.node)
