@@ -6,13 +6,12 @@ build-backend = "setuptools.build_meta"
 name = "snakesist"
 version = "0.4-rc1"
 description = "A Python database interface for eXist-db"
-license = "MIT"
 authors = [
     { name = "Theodor Costea", email = "theo.costea@gmail.com"},
     { name = "Frank Sachsenheim", email = "funkyfuture@riseup.net"},
 ]
 readme = "README.rst"
-requires-pythn = ">=3.9"
+requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -35,6 +34,9 @@ dependencies = [
 
 [project.entry-points.delb]
 snakesist = "snakesist.delb_plugins"
+
+[project.license]
+file = "LICENSE.txt"
 
 [project.urls]
 Documentation = "https://snakesist.readthedocs.io/"
