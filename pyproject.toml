@@ -1,37 +1,69 @@
-[tool.poetry]
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
 name = "snakesist"
-version = "0.3.0"
+version = "0.4-rc1"
 description = "A Python database interface for eXist-db"
 license = "MIT"
-authors = ["Theodor Costea <theo.costea@gmail.com>", "Frank Sachsenheim <funkyfuture@riseup.net>"]
+authors = [
+    { name = "Theodor Costea", email = "theo.costea@gmail.com"},
+    { name = "Frank Sachsenheim", email = "funkyfuture@riseup.net"},
+]
 readme = "README.rst"
-repository = "https://github.com/delb-xml/snakesist"
+requires-pythn = ">=3.9"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Text Processing :: Markup :: XML",
 ]
-keywords = ["xml", "exist-db", "client"]
+keywords = ["xml", "exist-db", "client", "delb"]
+dependencies = [
+#    FIXME "delb~=0.5"
+    "delb @ {root:parent:uri}/delb"
+]
 
-[tool.poetry.plugins.delb]
+[project.entry-points.delb]
 snakesist = "snakesist.delb_plugins"
 
-[tool.poetry.dependencies]
-python = "^3.8"
-delb = { version="^0.4", extras=["https-loader"] }
-importlib_metadata = { version="*", python = "<3.8" }
+[project.urls]
+Documentation = "https://snakesist.readthedocs.io/"
+Issues = "https://github.com/delb-xml/snakesist"
+Repository = "https://github.com/delb-xml/snakesist"
 
-[tool.poetry.dev-dependencies]
-delb-reference-plugins = "^0.4"
-lxml-stubs = "*"
-pytest-docker = "^3.1.1"
-pytest-mypy = "^0.8.1"
-sphinx = "*"
-sphinx_rtd_theme = "^0.4.3"
-types-requests = "^2.27.5"
+# REMOVE
+[tool.hatch.metadata]
+allow-direct-references = true
 
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+
+[tool.hatch.envs.mypy]
+dependencies = [
+    "lxml-stubs",
+    "mypy"
+]
+skipinstall = true
+[tool.hatch.envs.mypy.scripts]
+check = "mypy snakesist"
+
+[tool.hatch.envs.tests]
+dependencies = [
+    "pytest-docker",
+    # FIXME "delb-reference-plugins~=0.5",
+    "delb-reference-plugins @ {root:parent:uri}/reference-plugins",
+]
+[tool.hatch.envs.tests.env-vars]
+EXIST_VERSION = "{matrix:existdb_version}"
+[[tool.hatch.envs.tests.matrix]]
+existdb_version = ["4.10.0", "5.4.1", "6.2.0"]
+[tool.hatch.envs.tests.scripts]
+check = "python -m pytest tests"

@@ -15,20 +15,28 @@ on:
 
 jobs:
 
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: pipx run hatch run mypy:check
+
   tests:
+    needs: ["mypy"]
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version:
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
-        exist-version:
-          - "4.10.0"
-          - "5.4.1"
-          - "6.2.0"
+          - "3.13"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,17 +44,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - run: python -m pip install --upgrade pip setuptools wheel
-      - uses: abatilo/actions-poetry@v3.0.0
-      - run: poetry install
-      - run: poetry run pytest --mypy tests
-        env:
-          EXIST_VERSION: ${{ matrix.exist-version }}
+      - run: pipx run hatch run tests:check
 
 ...
