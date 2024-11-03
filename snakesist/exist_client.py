@@ -466,8 +466,8 @@ class ExistClient:
         path = result_node.full_text
 
         query = (
-            "util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), "
-            "'{node_id}')"
+            f"util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), "
+            f"'{node_id}')"
         )
         queried_node = self.query(query)[0]
         assert isinstance(queried_node, TagNode)
