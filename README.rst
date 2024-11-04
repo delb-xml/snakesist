@@ -1,18 +1,19 @@
-.. image:: https://i.ibb.co/JsZqM7z/snakesist-logo.png
+.. image:: https://github.com/delb-xml/snakesist/blob/main/snakesist-logo.png
     :target: https://snakesist.readthedocs.io
 
 snakesist
 =========
 
-.. image:: https://badge.fury.io/py/snakesist.svg
-    :target: https://badge.fury.io/py/snakesist
+.. image:: https://img.shields.io/pypi/l/snakesist.svg
+    :target: https://github.com/delb-xml/snakesist/blob/main/LICENSE.txt
+    :alt: License
+
+.. image:: https://img.shields.io/pypi/pyversions/snakesist.svg
+    :alt: Python versions
 
 .. image:: https://readthedocs.org/projects/snakesist/badge/?version=latest
-    :target: https://snakesist.readthedocs.io/en/latest/?badge=latest
+    :target: https://snakesist.readthedocs.io/en/latest/
     :alt: Documentation Status
-
-.. image:: https://github.com/delb-xml/snakesist/actions/workflows/tests.yml/badge.svg
-    :target: https://github.com/delb-xml/snakesist/actions/workflows/tests.yml
 
 
 ``snakesist`` is a Python database interface for `eXist-db <https://exist-db.org>`_.
