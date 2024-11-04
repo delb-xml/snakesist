@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import re
 from pathlib import PurePosixPath
+from string import Template
 from typing import Any, Final, NamedTuple, Optional
 from urllib.parse import urlparse
 
@@ -29,6 +30,10 @@ class QueryResultItem(NamedTuple):
     node: NodeBase
 
 
+class QueryTemplate(Template):
+    delimiter = "@"
+
+
 class ConnectionProps(NamedTuple):
     transport: str
     user: str
@@ -46,18 +51,47 @@ DEFAULT_PASSWORD: Final = ""
 EXISTDB_NAMESPACE: Final = "http://exist.sourceforge.net/NS/exist"
 SNAKESIST_NAMESPACE: Final = "https://snakesist.readthedocs.io/"
 TRANSPORT_PROTOCOLS: Final = {"https": 443, "http": 80}  # the order matters!
-XQUERY_PAYLOAD_TEMPLATE: Final = (
-    "<query "
-    f'xmlns="{EXISTDB_NAMESPACE}" '
-    'start="1" '
-    'max="0" '
-    'cache="no">'
-    "<text> <![CDATA[{query}]]></text>"
-    "<properties>"
-    '<property name="indent" value="no"/>'
-    '<property name="wrap" value="yes"/>'
-    "</properties>"
-    "</query>"
+
+
+PATH_OF_ABS_ID_QUERY: Final = QueryTemplate(
+    """\
+let $node := util:get-resource-by-absolute-id(@id)
+return util:collection-name($node) || "/" || util:document-name($node)
+"""
+)
+
+RETRIEVE_NODE_QUERY = QueryTemplate(
+    """\
+util:node-by-id(util:get-resource-by-absolute-id(@abs_resource_id), "@node_id")"""
+)
+
+
+XPATH_QUERY: Final = QueryTemplate(
+    """\
+for $node in @expression return
+<snakesist:result xmlns:snakesist="SNAKESIST_NAMESPACE"
+  nodeid="{util:node-id($node)}"
+  absid="{util:absolute-resource-id($node)}"
+  path="{util:collection-name($node) || "/" || util:document-name($node)}"
+>{$node}</snakesist:result>
+""".replace(
+        "SNAKESIST_NAMESPACE", SNAKESIST_NAMESPACE
+    )
+)
+
+
+XQUERY_PAYLOAD: Final = QueryTemplate(
+    """\
+<query xmlns="EXISTDB_NAMESPACE" start="1" max="0" cache="no">
+  <text><![CDATA[@query]]></text>
+  <properties>
+    <property name="indent" value="no"/>
+    <property name="wrap" value="yes"/>
+  </properties>
+</query>
+""".replace(
+        "EXISTDB_NAMESPACE", EXISTDB_NAMESPACE
+    )
 )
 
 
@@ -394,13 +428,12 @@ class ExistClient:
         will be the starting point of the query.
 
         :param query_expression: XQuery expression
-        :return: The query result as a ``delb.Document`` object.
+        :return: The query result as a :class:`delb.TagNode` object.
         """
-
         response = self.http_client.post(
             self.root_collection_url,
             headers={"Content-Type": "application/xml"},
-            content=XQUERY_PAYLOAD_TEMPLATE.format(query=query_expression),
+            content=XQUERY_PAYLOAD.substitute(query=query_expression),
         )
 
         try:
@@ -418,16 +451,9 @@ class ExistClient:
 
         :param expression: XPath expression (whatever version your eXist
                            instance supports via its RESTful API)
-        :return: The query results as a list of :class:`Resource` objects.
+        :return: The query results as a list of :class:`NodeResource` objects.
         """
-        results_node = self.query(
-            f"for $node in {expression} "
-            f"return <snakesist:result xmlns:snakesist='{SNAKESIST_NAMESPACE}'"
-            f"nodeid='{{util:node-id($node)}}' "
-            f"absid='{{util:absolute-resource-id($node)}}' "
-            f"path='{{util:collection-name($node) || '/' || util:document-name($node)}}'>"
-            f"{{$node}}</snakesist:result>"
-        )
+        results_node = self.query(XPATH_QUERY.substitute(expression=expression))
         assert results_node.namespace == EXISTDB_NAMESPACE
         assert results_node.local_name == "result"
         resources = []
@@ -441,7 +467,7 @@ class ExistClient:
                 absolute_id=str(result_node["absid"]),
                 node_id=str(result_node["nodeid"]),
                 document_path=str(result_node["path"]),
-                node=content_node,
+                node=content_node.detach(),
             )
             resources.append(NodeResource(exist_client=self, query_result=query_result))
         return resources
@@ -455,27 +481,32 @@ class ExistClient:
         :param node_id: The node ID locating a node inside a document (optional).
         :return: The queried node as a ``Resource`` object.
         """
-        query_result = self.query(
-            f"let $node := util:get-resource-by-absolute-id({abs_resource_id})"
-            f"return util:collection-name($node) || '/' || util:document-name($node)"
-        )
-        result_node = query_result.xpath(
-            "//result/value", namespaces={None: EXISTDB_NAMESPACE}
-        ).first
-        assert isinstance(result_node, TagNode)
-        path = result_node.full_text
-
-        query = (
-            f"util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), "
-            f"'{node_id}')"
-        )
-        queried_node = self.query(query)[0]
+        queried_node = self.query(
+            RETRIEVE_NODE_QUERY.substitute(
+                abs_resource_id=abs_resource_id, node_id=node_id
+            )
+        )[0]
         assert isinstance(queried_node, TagNode)
 
         return NodeResource(
             self,
-            QueryResultItem(abs_resource_id, node_id, path, queried_node),
+            QueryResultItem(
+                absolute_id=abs_resource_id,
+                node_id=node_id,
+                document_path=self._get_document_path_of_node(abs_resource_id),
+                node=queried_node.detach(),
+            ),
         )
+
+    def _get_document_path_of_node(self, abs_resource_id: str) -> str:
+        result_node = (
+            self.query(PATH_OF_ABS_ID_QUERY.substitute(id=abs_resource_id))
+            .xpath("//result/value", namespaces={None: EXISTDB_NAMESPACE})
+            .first
+        )
+        assert isinstance(result_node, TagNode)
+        path = result_node.full_text
+        return path
 
     def update_node(self, data: str, abs_resource_id: str, node_id: str) -> None:
         """
