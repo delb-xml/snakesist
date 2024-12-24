@@ -128,13 +128,11 @@ class NodeResource:
         exist_client: "ExistClient",
         query_result: QueryResultItem,
     ):
+        self._abs_resource_id = query_result.absolute_id
+        self._document_path = query_result.document_path
         self._exist_client = exist_client
-        (
-            self._abs_resource_id,
-            self._node_id,
-            self._document_path,
-            self.node,
-        ) = query_result
+        self.node = query_result.node
+        self._node_id = query_result.node_id
 
     def __str__(self):
         return str(self.node)
