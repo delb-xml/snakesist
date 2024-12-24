@@ -7,6 +7,8 @@ services:
         EXIST_VERSION: "${EXIST_VERSION:?The EXIST_VERSION env var has not been set}"
     ports:
       - "8080:8080"
+    volumes:
+      - ./logs:/exist/logs
 
   proxy:
     image: nginx
@@ -14,8 +16,6 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/cert.pem:/etc/ssl/certs/localhost.pem:ro
-      - ./nginx/key.pem:/etc/ssl/private/localhost.pem:ro
+      - ./nginx:/etc/nginx:ro
     depends_on:
       - existdb
