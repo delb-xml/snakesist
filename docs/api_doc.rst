@@ -14,3 +14,8 @@ Resources
 .. autofunction:: snakesist.delb_plugins.existdb_loader
 
 .. autoclass:: snakesist.NodeResource
+
+Exceptions
+----------
+
+.. automodule:: snakesist.exceptions

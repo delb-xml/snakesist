@@ -18,6 +18,7 @@ from _delb.parser import ParserOptions
 from snakesist.exceptions import (
     SnakesistConfigError,
     SnakesistNotFound,
+    SnakesistQueryError,
     SnakesistReadError,
     SnakesistWriteError,
 )
@@ -430,11 +431,15 @@ class ExistClient:
         :param query_expression: XQuery expression
         :return: The query result as a :class:`delb.TagNode` object.
         """
+        payload = XQUERY_PAYLOAD.substitute(query=query_expression)
         response = self.http_client.post(
             self.root_collection_url,
             headers={"Content-Type": "application/xml"},
-            content=XQUERY_PAYLOAD.substitute(query=query_expression),
+            content=payload,
         )
+
+        if response.status_code == 400:
+            raise SnakesistQueryError(payload, response)
 
         try:
             response.raise_for_status()
