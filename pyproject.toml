@@ -59,7 +59,11 @@ dependencies = [
 [tool.hatch.envs.tests.env-vars]
 EXIST_VERSION = "{matrix:existdb_version}"
 [[tool.hatch.envs.tests.matrix]]
-existdb_version = ["4.10.0", "5.4.1", "6.2.0"]
+existdb_version = [
+    "4.11.2",
+    "5.5.2",
+    "6.3.0"
+]
 [tool.hatch.envs.tests.scripts]
 check = "python -m pytest --cov=snakesist tests"
 coverage-report = """
