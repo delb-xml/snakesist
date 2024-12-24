@@ -28,8 +28,7 @@ classifiers = [
 ]
 keywords = ["xml", "exist-db", "client", "delb"]
 dependencies = [
-#    FIXME "delb~=0.5"
-    "delb @ {root:parent:uri}/delb"
+    "delb~=0.5-rc2"
 ]
 
 [project.entry-points.delb]
@@ -43,11 +42,6 @@ Documentation = "https://snakesist.readthedocs.io/"
 Issues = "https://github.com/delb-xml/snakesist"
 Repository = "https://github.com/delb-xml/snakesist"
 
-# REMOVE
-[tool.hatch.metadata]
-allow-direct-references = true
-
-
 [tool.hatch.envs.mypy]
 dependencies = [
     "mypy"
@@ -60,8 +54,7 @@ check = "mypy snakesist"
 dependencies = [
     "pytest-cov",
     "pytest-docker",
-    # FIXME "delb-reference-plugins~=0.5",
-    "delb-reference-plugins @ {root:parent:uri}/reference-plugins",
+    "delb-reference-plugins~=0.5-rc4",
 ]
 [tool.hatch.envs.tests.env-vars]
 EXIST_VERSION = "{matrix:existdb_version}"
