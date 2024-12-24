@@ -71,9 +71,9 @@ XPATH_QUERY: Final = QueryTemplate(
     """\
 for $node in @expression return
 <snakesist:result xmlns:snakesist="SNAKESIST_NAMESPACE"
-  nodeid="{util:node-id($node)}"
-  absid="{util:absolute-resource-id($node)}"
-  path="{util:collection-name($node) || "/" || util:document-name($node)}"
+  snakesist:nodeid="{util:node-id($node)}"
+  snakesist:absid="{util:absolute-resource-id($node)}"
+  snakesist:path="{util:collection-name($node) || "/" || util:document-name($node)}"
 >{$node}</snakesist:result>
 """.replace(
         "SNAKESIST_NAMESPACE", SNAKESIST_NAMESPACE
@@ -469,9 +469,9 @@ class ExistClient:
             content_node = result_node[0]
             assert isinstance(content_node, NodeBase)
             query_result = QueryResultItem(
-                absolute_id=str(result_node["absid"]),
-                node_id=str(result_node["nodeid"]),
-                document_path=str(result_node["path"]),
+                absolute_id=result_node["absid"].value,
+                node_id=result_node["nodeid"].value,
+                document_path=result_node["path"].value,
                 node=content_node.detach(),
             )
             resources.append(NodeResource(exist_client=self, query_result=query_result))
