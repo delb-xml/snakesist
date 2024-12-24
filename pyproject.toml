@@ -72,3 +72,9 @@ coverage-report = """
         --cov=snakesist \
         tests
 """
+
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error"
+]

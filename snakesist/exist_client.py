@@ -22,6 +22,7 @@ from snakesist.exceptions import (
     SnakesistReadError,
     SnakesistWriteError,
 )
+from snakesist.utils import _parse_tag_node
 
 
 class QueryResultItem(NamedTuple):
@@ -332,7 +333,7 @@ class ExistClient:
                 else:
                     continue
 
-            parsed_response = TagNode.parse(response.content)
+            parsed_response = _parse_tag_node(response.text)
             if (
                 parsed_response.namespace == EXISTDB_NAMESPACE
                 and parsed_response.local_name == "result"
@@ -444,7 +445,7 @@ class ExistClient:
         except Exception as e:
             raise SnakesistReadError("Unhandled query error.") from e
 
-        return TagNode.parse(response.content, parser_options=self.parser_options)
+        return _parse_tag_node(response.text, parser_options=self.parser_options)
 
     def xpath(self, expression: str) -> list[NodeResource]:
         """
