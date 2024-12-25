@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import re
+import warnings
 from pathlib import PurePosixPath
 from string import Template
 from typing import Any, Final, NamedTuple, Optional
@@ -26,7 +27,7 @@ from snakesist.utils import _parse_tag_node
 
 
 class QueryResultItem(NamedTuple):
-    absolute_id: str
+    document_id: str
     node_id: str
     document_path: str
     node: NodeBase
@@ -55,28 +56,45 @@ SNAKESIST_NAMESPACE: Final = "https://snakesist.readthedocs.io/"
 TRANSPORT_PROTOCOLS: Final = {"https": 443, "http": 80}  # the order matters!
 
 
-PATH_OF_ABS_ID_QUERY: Final = QueryTemplate(
-    """\
-let $node := util:get-resource-by-absolute-id(@id)
-return util:collection-name($node) || "/" || util:document-name($node)
-"""
+# QUERY TEMPLATES
+#
+# for successful code deduplication, these symbols are canonically used, most relate
+# to those with the same name in the Python client code:
+# @document_id
+# @node_id
+# @serialisat
+
+DOCUMENT_BY_ID: Final = "util:get-resource-by-absolute-id(@document_id)"
+DOCUMENT_PATH_OF_NODE: Final = (
+    'util:collection-name($node) || "/" || util:document-name($node)'
 )
 
-RETRIEVE_NODE_QUERY = QueryTemplate(
-    """\
-util:node-by-id(util:get-resource-by-absolute-id(@abs_resource_id), "@node_id")"""
+
+FETCH_NODE_QUERY: Final = QueryTemplate(
+    f'util:node-by-id({DOCUMENT_BY_ID}, "@node_id")'
 )
 
+DELETE_NODE_QUERY: Final = QueryTemplate("update delete " + FETCH_NODE_QUERY.template)
+
+GET_PATH_OF_RESOURCE_QUERY: Final = QueryTemplate(
+    f"let $node := {DOCUMENT_BY_ID} return {DOCUMENT_PATH_OF_NODE}"
+)
+
+UPDATE_NODE_QUERY: Final = QueryTemplate(
+    "update replace " + FETCH_NODE_QUERY.template + " with @serialisat"
+)
 
 XPATH_QUERY: Final = QueryTemplate(
     """\
 for $node in @expression return
-<snakesist:result xmlns:snakesist="SNAKESIST_NAMESPACE"
-  snakesist:nodeid="{util:node-id($node)}"
-  snakesist:absid="{util:absolute-resource-id($node)}"
-  snakesist:path="{util:collection-name($node) || "/" || util:document-name($node)}"
->{$node}</snakesist:result>
+<s:result xmlns:s="SNAKESIST_NAMESPACE"
+  s:documentID="{util:absolute-resource-id($node)}"
+  s:nodeID="{util:node-id($node)}"
+  s:path="{DOCUMENT_PATH}"
+>{$node}</s:result>
 """.replace(
+        "DOCUMENT_PATH", DOCUMENT_PATH_OF_NODE
+    ).replace(
         "SNAKESIST_NAMESPACE", SNAKESIST_NAMESPACE
     )
 )
@@ -95,6 +113,9 @@ XQUERY_PAYLOAD: Final = QueryTemplate(
         "EXISTDB_NAMESPACE", EXISTDB_NAMESPACE
     )
 )
+
+
+#
 
 
 content_type_is_xml: Final = re.compile(r"^(application|text)/xml(;.+)?").match
@@ -124,16 +145,24 @@ class NodeResource:
 
     """
 
+    __slots__ = (
+        "__document_id",
+        "__document_path",
+        "__exist_client",
+        "node",
+        "__node_id",
+    )
+
     def __init__(
         self,
         exist_client: "ExistClient",
         query_result: QueryResultItem,
     ):
-        self._abs_resource_id = query_result.absolute_id
-        self._document_path = query_result.document_path
-        self._exist_client = exist_client
+        self.__document_id = query_result.document_id
+        self.__document_path = query_result.document_path
+        self.__exist_client = exist_client
         self.node = query_result.node
-        self._node_id = query_result.node_id
+        self.__node_id = query_result.node_id
 
     def __str__(self):
         return str(self.node)
@@ -142,46 +171,53 @@ class NodeResource:
         """
         Retrieve the current node state from the database and update the object.
         """
-        self.node = self._exist_client.retrieve_resource(
-            abs_resource_id=self._abs_resource_id, node_id=self._node_id
+        self.node = self.__exist_client.fetch_node(
+            document_id=self.__document_id, node_id=self.__node_id
         )
 
     def update_push(self):
         """Writes the node to the database."""
-        self._exist_client.update_node(
-            data=str(self.node),
-            abs_resource_id=self._abs_resource_id,
-            node_id=self._node_id,
+        self.__exist_client.update_node(
+            document_id=self.__document_id,
+            node=self.node,
+            node_id=self.__node_id,
         )
 
     def delete(self):
         """Deletes the node from the database."""
-        self._exist_client.delete_node(
-            abs_resource_id=self._abs_resource_id, node_id=self._node_id
+        self.__exist_client.delete_node(
+            document_id=self.__document_id, node_id=self.__node_id
         )
-        self._node_id = ""
-        self._abs_resource_id = ""
+        self.__document_id = ""
+        self.__node_id = ""
 
     @property
     def abs_resource_id(self):
+        warnings.warn(
+            "This attribute was renamed to `document_id`.", category=DeprecationWarning
+        )
+        return self.__document_id
+
+    @property
+    def document_id(self):
         """
         The absolute resource ID pointing to a document in the database.
         """
-        return self._abs_resource_id
+        return self.__document_id
 
     @property
     def node_id(self):
         """
         The node ID locating the node relative to the containing document.
         """
-        return self._node_id
+        return self.__node_id
 
     @property
     def document_path(self):
         """
         The resource path pointing to the document.
         """
-        return self._document_path
+        return self.__document_path
 
 
 class ExistClient:
@@ -468,43 +504,45 @@ class ExistClient:
             content_node = result_node[0]
             assert isinstance(content_node, NodeBase)
             query_result = QueryResultItem(
-                absolute_id=result_node["absid"].value,
-                node_id=result_node["nodeid"].value,
+                document_id=result_node["documentID"].value,
+                node_id=result_node["nodeID"].value,
                 document_path=result_node["path"].value,
                 node=content_node.detach(),
             )
             resources.append(NodeResource(exist_client=self, query_result=query_result))
         return resources
 
-    # TODO? rename
     def retrieve_resource(self, abs_resource_id: str, node_id: str) -> NodeResource:
+        warnings.warn(
+            "This method has been renamed to `fetch_node`.", category=DeprecationWarning
+        )
+        return self.fetch_node(abs_resource_id, node_id)
+
+    def fetch_node(self, document_id: str, node_id: str) -> NodeResource:
         """
         Retrieve a single resource by its internal database IDs.
 
-        :param abs_resource_id: The absolute resource ID pointing to the document.
+        :param document_id: The absolute resource ID pointing to the document.
         :param node_id: The node ID locating a node inside a document (optional).
         :return: The queried node as a ``Resource`` object.
         """
         queried_node = self.query(
-            RETRIEVE_NODE_QUERY.substitute(
-                abs_resource_id=abs_resource_id, node_id=node_id
-            )
+            FETCH_NODE_QUERY.substitute(document_id=document_id, node_id=node_id)
         )[0]
-        assert isinstance(queried_node, TagNode)
 
         return NodeResource(
             self,
             QueryResultItem(
-                absolute_id=abs_resource_id,
+                document_id=document_id,
                 node_id=node_id,
-                document_path=self._get_document_path_of_node(abs_resource_id),
+                document_path=self.__get_document_path_of_node(document_id),
                 node=queried_node.detach(),
             ),
         )
 
-    def _get_document_path_of_node(self, abs_resource_id: str) -> str:
+    def __get_document_path_of_node(self, document_id: str) -> str:
         result_node = (
-            self.query(PATH_OF_ABS_ID_QUERY.substitute(id=abs_resource_id))
+            self.query(GET_PATH_OF_RESOURCE_QUERY.substitute(document_id=document_id))
             .xpath("//result/value", namespaces={None: EXISTDB_NAMESPACE})
             .first
         )
@@ -512,30 +550,31 @@ class ExistClient:
         path = result_node.full_text
         return path
 
-    def update_node(self, data: str, abs_resource_id: str, node_id: str) -> None:
+    def update_node(self, node: NodeBase, document_id: str, node_id: str) -> None:
         """
         Replace a sub-document node with an updated version.
 
         :param data: A well-formed XML string containing the node to replace the old one with.
-        :param abs_resource_id: The absolute resource ID pointing to the document containing the node.
+        :param document_id: The absolute resource ID pointing to the document containing the node.
         :param node_id: The node ID locating the node inside the containing document.
         """
         self.query(
-            f"update replace util:node-by-id(util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
-            f"with {data}"
+            UPDATE_NODE_QUERY.substitute(
+                document_id=document_id,
+                node_id=node_id,
+                serialisat=node.serialize(),
+            )
         )
 
-    def delete_node(self, abs_resource_id: str, node_id: str = "") -> None:
+    def delete_node(self, document_id: str, node_id: str = "") -> None:
         """
         Remove a node from the database.
 
-        :param abs_resource_id: The absolute resource ID pointing to the document.
+        :param document_id: The absolute resource ID pointing to the document.
         :param node_id: The node ID locating a node inside a document (optional).
         """
         self.query(
-            f"let $node := util:node-by-id("
-            f"util:get-resource-by-absolute-id({abs_resource_id}), '{node_id}')"
-            f"return update delete $node"
+            DELETE_NODE_QUERY.substitute(document_id=document_id, node_id=node_id)
         )
 
     def delete_document(self, document_path: str) -> None:

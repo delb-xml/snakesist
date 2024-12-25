@@ -44,11 +44,9 @@ def test_query_with_lengthy_contents(test_client):
 
 
 @pytest.mark.usefixtures("sample_document")
-def test_retrieve_resource(test_client):
+def test_fetch_node(test_client):
     xpath_result = test_client.xpath("//list")[0]
-    resource = test_client.retrieve_resource(
-        xpath_result.abs_resource_id, xpath_result.node_id
-    )
+    resource = test_client.fetch_node(xpath_result.document_id, xpath_result.node_id)
     assert compare_trees(xpath_result.node, resource.node)
 
 
