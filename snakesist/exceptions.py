@@ -38,9 +38,11 @@ class SnakesistQueryError(SnakesistError):
         assert exception.local_name == "exception"
 
         self.messages: tuple[str, ...] = tuple(
-            n.full_text for n in exception.css_select("message")
+            n.full_text for n in exception.css_select("message", namespaces={})
         )
-        self.path = exception.css_select("path").first.full_text
+        path_node = exception.css_select("path", namespaces={}).first
+        assert isinstance(path_node, TagNode)
+        self.path = path_node.full_text
         self.payload = payload
 
         super().__init__()
