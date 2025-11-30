@@ -1,7 +1,4 @@
-"""
-.. module:: exist_client
-    :synopsis: A module containing basic tools for connecting to eXist.
-"""
+"""A module containing basic tools for connecting to eXist"""
 
 from __future__ import annotations
 
@@ -224,19 +221,18 @@ class ExistClient:
     """
     An eXist-db client object representing a database instance.
     The client can be used for CRUD operations.
-    Resources can be queried using an XPath expression.
+    Nodes can be queried using an XPath expression.
     Queried resources are identified by the absolute resource ID and,
     if the resource is part of a document, the node ID.
 
-    :param host: hostname
-    :param port: port used to connect to the configured eXist instance
-    :param user: username
-    :param password: password
-    :param prefix: configured path prefix for the eXist instance
-    :param root_collection: a path to a collection which will be used as root for all
-                            document paths
-    :param parser: deprecated
-    :param parser_options: a named tuple from delb to define the XML parser's behaviour
+    :param host: The name of the database serving host.
+    :param port: The port the database instance is listening to.
+    :param user: An optional username to authenticate.
+    :param password: The accompanying password for authentication.
+    :param prefix: The HTTP path prefix for the database instance.
+    :param root_collection: The path to the collection which will be used as root for
+                            all document paths.
+    :param parser_options: A named tuple from delb to define the XML parser's behaviour.
     """
 
     def __init__(

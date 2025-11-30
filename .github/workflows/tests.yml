@@ -15,19 +15,26 @@ on:
 
 jobs:
 
-  mypy:
+
+  other-quality-checks:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - doctest
+          - mypy
     steps:
       - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref || github.ref }}
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.x
-      - run: pipx run hatch run mypy:check
+          cache: pip
+          python-version: "3.x"
+      - uses: extractions/setup-just@v2
+      - run: just ${{ matrix.target }}
 
   tests:
-    needs: ["mypy"]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -43,7 +50,9 @@ jobs:
           ref: ${{ inputs.ref || github.ref }}
       - uses: actions/setup-python@v5
         with:
+          cache: pip
           python-version: ${{ matrix.python-version }}
-      - run: pipx run hatch run tests:check
+      - uses: extractions/setup-just@v2
+      - run: just pytest
 
 ...
