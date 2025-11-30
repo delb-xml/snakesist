@@ -9,9 +9,8 @@ from urllib.parse import urlparse
 
 import httpx
 from _delb.plugins import plugin_manager, DocumentMixinBase
-from _delb.plugins.https_loader import https_loader
+from _delb.plugins.web_loader import web_loader
 from _delb.typing import LoaderResult
-from lxml import etree
 
 from snakesist.exceptions import (
     SnakesistConfigError,
@@ -88,8 +87,7 @@ def load_from_url(source: Any, config: SimpleNamespace) -> LoaderResult:
         PurePosixPath(f"/{config.existdb.client.prefix}")
     )
     result = load_from_path(path, config)
-    if isinstance(result, etree._ElementTree):
-        config.source_url = source
+    config.source_url = source
     return result
 
 
@@ -99,10 +97,11 @@ def load_from_path(source: Any, config: SimpleNamespace) -> LoaderResult:
         raise TypeError
 
     client: ExistClient = config.existdb.client
+    config.parser_options = config.parser_options._replace(encoding="UTF-8")
     url = f"{client.root_collection_url}/{path}"
 
     try:
-        result = https_loader(url, config, client=client.http_client)
+        result = web_loader(url, config, client=client.http_client)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 404:
             raise SnakesistNotFound(f"Document '{path}' not found.")

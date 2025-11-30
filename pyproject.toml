@@ -2,6 +2,7 @@
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
+
 [project]
 name = "snakesist"
 version = "0.4-rc1"
@@ -28,7 +29,7 @@ classifiers = [
 ]
 keywords = ["xml", "exist-db", "client", "delb"]
 dependencies = [
-    "delb~=0.5-rc2"
+    "delb[web-loader]~=0.6-rc1"
 ]
 
 [project.entry-points.delb]
@@ -44,6 +45,7 @@ Repository = "https://github.com/delb-xml/snakesist"
 
 [tool.hatch.envs.mypy]
 dependencies = [
+    "httpx",
     "mypy"
 ]
 skipinstall = true
@@ -54,7 +56,7 @@ check = "mypy snakesist"
 dependencies = [
     "pytest-cov",
     "pytest-docker",
-    "delb-reference-plugins~=0.5-rc4",
+    "delb-reference-plugins~=0.6-rc0",
 ]
 [tool.hatch.envs.tests.env-vars]
 EXIST_VERSION = "{matrix:existdb_version}"
@@ -76,5 +78,6 @@ coverage-report = """
 
 [tool.pytest.ini_options]
 filterwarnings = [
-    "error"
+    "error",
+    "ignore:unclosed:ResourceWarning",
 ]

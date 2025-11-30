@@ -13,8 +13,9 @@ from typing import Any, Final, NamedTuple, Optional
 from urllib.parse import urlparse
 
 import httpx
-from _delb.nodes import NodeBase, TagNode
+from _delb.builder import parse_tree
 from _delb.parser import ParserOptions
+from _delb.typing import TagNodeType, XMLNodeType
 
 from snakesist.exceptions import (
     SnakesistConfigError,
@@ -23,14 +24,13 @@ from snakesist.exceptions import (
     SnakesistReadError,
     SnakesistWriteError,
 )
-from snakesist.utils import _parse_tag_node
 
 
 class QueryResultItem(NamedTuple):
     document_id: str
     node_id: str
     document_path: str
-    node: NodeBase
+    node: XMLNodeType
 
 
 class QueryTemplate(Template):
@@ -253,7 +253,7 @@ class ExistClient:
     ):
         if parser is not None:
             raise ValueError(
-                "The parsers argument isn't used anymore. Parsers are derived from the"
+                "The parsers argument isn't used anymore. Parsers are derived from the "
                 "provided `parser_options`."
             )
         _prefix = _mangle_path(prefix)
@@ -267,7 +267,12 @@ class ExistClient:
         )
         self.__base_url = f"{transport}://{user}:{password}@{host}:{port}/{_prefix}"
         self.http_client = httpx.Client(http2=True)
-        self.parser_options = parser_options or ParserOptions(reduce_whitespace=True)
+        if parser_options is None:
+            self.parser_options = ParserOptions(
+                encoding="UTF-8", reduce_whitespace=True
+            )
+        else:
+            self.parser_options = parser_options._replace(encoding="UTF-8")
         self.root_collection = root_collection
 
     @classmethod
@@ -369,7 +374,10 @@ class ExistClient:
                 else:
                     continue
 
-            parsed_response = _parse_tag_node(response.text)
+            parsed_response = parse_tree(
+                response.text, options=ParserOptions(encoding="UTF-8")
+            )
+            assert isinstance(parsed_response, TagNodeType)
             if (
                 parsed_response.namespace == EXISTDB_NAMESPACE
                 and parsed_response.local_name == "result"
@@ -458,7 +466,7 @@ class ExistClient:
         else:
             return result
 
-    def query(self, query_expression: str) -> TagNode:
+    def query(self, query_expression: str) -> TagNodeType:
         """
         Make a database query using XQuery. The configured root collection
         will be the starting point of the query.
@@ -481,7 +489,9 @@ class ExistClient:
         except Exception as e:
             raise SnakesistReadError("Unhandled query error.") from e
 
-        return _parse_tag_node(response.text, parser_options=self.parser_options)
+        result = parse_tree(response.text, options=self.parser_options)
+        assert isinstance(result, TagNodeType)
+        return result
 
     def xpath(self, expression: str) -> list[NodeResource]:
         """
@@ -500,13 +510,13 @@ class ExistClient:
         for result_node in results_node.xpath(
             "//result", namespaces={None: SNAKESIST_NAMESPACE}
         ):
-            assert isinstance(result_node, TagNode)
+            assert isinstance(result_node, TagNodeType)
             content_node = result_node[0]
-            assert isinstance(content_node, NodeBase)
+            assert isinstance(content_node, XMLNodeType)
             query_result = QueryResultItem(
-                document_id=result_node["documentID"].value,
-                node_id=result_node["nodeID"].value,
-                document_path=result_node["path"].value,
+                document_id=result_node["documentID"].value,  # type: ignore
+                node_id=result_node["nodeID"].value,  # type: ignore
+                document_path=result_node["path"].value,  # type: ignore
                 node=content_node.detach(),
             )
             resources.append(NodeResource(exist_client=self, query_result=query_result))
@@ -546,11 +556,11 @@ class ExistClient:
             .xpath("//result/value", namespaces={None: EXISTDB_NAMESPACE})
             .first
         )
-        assert isinstance(result_node, TagNode)
+        assert isinstance(result_node, TagNodeType)
         path = result_node.full_text
         return path
 
-    def update_node(self, node: NodeBase, document_id: str, node_id: str) -> None:
+    def update_node(self, node: XMLNodeType, document_id: str, node_id: str) -> None:
         """
         Replace a sub-document node with an updated version.
 

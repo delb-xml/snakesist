@@ -1,7 +1,9 @@
 import pytest
 import httpx
 
-from delb import compare_trees, Document, FailedDocumentLoading
+from delb import Document
+from delb.exceptions import FailedDocumentLoading
+from delb.utils import compare_trees
 
 from snakesist import ExistClient
 

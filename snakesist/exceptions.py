@@ -1,7 +1,6 @@
 import httpx
-from _delb.nodes import TagNode
-
-from snakesist.utils import _parse_tag_node
+from _delb.builder import parse_tree
+from _delb.typing import TagNodeType
 
 
 class SnakesistError(Exception):
@@ -34,14 +33,15 @@ class SnakesistQueryError(SnakesistError):
     __slots__ = ("messages", "path", "payload")
 
     def __init__(self, payload: str, response: httpx.Response):
-        exception = _parse_tag_node(response.text)
+        exception = parse_tree(response.text)
+        assert isinstance(exception, TagNodeType)
         assert exception.local_name == "exception"
 
         self.messages: tuple[str, ...] = tuple(
-            n.full_text for n in exception.css_select("message", namespaces={})
+            n.full_text for n in exception.css_select("message")
         )
-        path_node = exception.css_select("path", namespaces={}).first
-        assert isinstance(path_node, TagNode)
+        path_node = exception.css_select("path").first
+        assert isinstance(path_node, TagNodeType)
         self.path = path_node.full_text
         self.payload = payload
 
