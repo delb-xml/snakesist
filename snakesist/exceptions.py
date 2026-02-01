@@ -1,6 +1,10 @@
-import httpx
+from typing import TYPE_CHECKING
+
 from _delb.builder import parse_tree
 from _delb.typing import TagNodeType
+
+if TYPE_CHECKING:
+    import httpx
 
 
 class SnakesistError(Exception):

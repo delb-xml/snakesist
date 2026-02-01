@@ -4,13 +4,13 @@ import re
 from functools import wraps
 from pathlib import PurePosixPath
 from types import SimpleNamespace
-from typing import Any, Final, Optional
+from typing import TYPE_CHECKING, Any, Final, Optional
 from urllib.parse import urlparse
 
 import httpx
 from _delb.plugins import plugin_manager, DocumentMixinBase
 from _delb.plugins.web_loader import web_loader
-from _delb.typing import LoaderResult
+
 
 from snakesist.exceptions import (
     SnakesistConfigError,
@@ -19,6 +19,9 @@ from snakesist.exceptions import (
     SnakesistNotFound,
 )
 from snakesist.exist_client import _mangle_path, _validate_filename, ExistClient
+
+if TYPE_CHECKING:
+    from _delb.typing import LoaderResult
 
 
 is_existdb_url: Final = re.compile(r"^existdb(\+https?)?://.+").match

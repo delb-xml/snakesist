@@ -2,11 +2,10 @@ from os import getenv
 from pathlib import Path
 
 import httpx
+import pytest
 from delb import Document
-from pytest import fixture
 
 from snakesist import ExistClient
-
 
 SAMPLE_DOCUMENT = """\
 <root>
@@ -21,7 +20,7 @@ SAMPLE_DOCUMENT = """\
 exist_version_is_verified = False
 
 
-@fixture
+@pytest.fixture
 def rest_base_url(test_client):
     return f"{test_client.root_collection_url}?_wrap=no&_indent=no"
 
@@ -35,15 +34,15 @@ def existdb_is_responsive(url):
         return True
 
 
-@fixture(autouse=True)
-def certificate(monkeypatch):
+@pytest.fixture(autouse=True)
+def _certificate(monkeypatch):
     monkeypatch.setenv(
         "SSL_CERT_FILE",
         str(Path(__file__).resolve().parent / "db_fixture" / "nginx" / "cert.pem"),
     )
 
 
-@fixture(scope="session")
+@pytest.fixture(scope="session")
 def db(docker_ip, docker_services):
     """
     Database setup and teardown
@@ -52,22 +51,22 @@ def db(docker_ip, docker_services):
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.1, check=lambda: existdb_is_responsive(base_url)
     )
-    yield base_url
+    return base_url
 
 
-@fixture(scope="session")
+@pytest.fixture(scope="session")
 def docker_compose_file():
     return str(Path(__file__).parent.resolve() / "db_fixture" / "docker-compose.yml")
 
 
-@fixture
+@pytest.fixture
 def sample_document(test_client):
     document = Document(SAMPLE_DOCUMENT, existdb_client=test_client)
     document.existdb_store(filename="sample.xml", replace_existing=True)
-    yield document
+    return document
 
 
-@fixture
+@pytest.fixture
 def test_client(db):
     host, port = db.removeprefix("http://").split(":")
     client = ExistClient(
@@ -86,4 +85,4 @@ def test_client(db):
         )
         exist_version_is_verified = True
 
-    yield client
+    return client

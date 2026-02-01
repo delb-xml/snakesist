@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 import httpx
 from _delb.builder import parse_tree
 from _delb.parser import ParserOptions
-from _delb.typing import TagNodeType, XMLNodeType
+from _delb.typing import TagNodeType
 
 from snakesist.exceptions import (
     SnakesistConfigError,
@@ -92,16 +92,13 @@ for $node in @expression return
   s:nodeID="{util:node-id($node)}"
   s:path="{DOCUMENT_PATH}"
 >{$node}</s:result>
-""".replace(
-        "DOCUMENT_PATH", DOCUMENT_PATH_OF_NODE
-    ).replace(
+""".replace("DOCUMENT_PATH", DOCUMENT_PATH_OF_NODE).replace(
         "SNAKESIST_NAMESPACE", SNAKESIST_NAMESPACE
     )
 )
 
 
-XQUERY_PAYLOAD: Final = QueryTemplate(
-    """\
+XQUERY_PAYLOAD: Final = QueryTemplate("""\
 <query xmlns="EXISTDB_NAMESPACE" start="1" max="0" cache="no">
   <text><![CDATA[@query]]></text>
   <properties>
@@ -109,10 +106,7 @@ XQUERY_PAYLOAD: Final = QueryTemplate(
     <property name="wrap" value="yes"/>
   </properties>
 </query>
-""".replace(
-        "EXISTDB_NAMESPACE", EXISTDB_NAMESPACE
-    )
-)
+""".replace("EXISTDB_NAMESPACE", EXISTDB_NAMESPACE))
 
 
 #
@@ -169,7 +163,7 @@ class NodeResource:
         """
         self.node = self.__exist_client.fetch_node(
             document_id=self.__document_id, node_id=self.__node_id
-        )
+        ).node
 
     def update_push(self):
         """

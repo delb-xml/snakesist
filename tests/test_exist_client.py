@@ -106,7 +106,7 @@ def test_update_node(sample_document, test_client):
 
 @pytest.mark.usefixtures("db")
 @pytest.mark.parametrize(
-    "url, properties",
+    ("url", "properties"),
     (
         ("existdb://localhost/exist", ("https", "", "", "localhost", 443, "exist")),
         (

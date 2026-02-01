@@ -9,6 +9,12 @@ doctest:
     pipx run hatch run docs:clean
     pipx run hatch run docs:doctest
 
+# code & data & document linting with doc8 & flake8 & yamllint
+lint:
+    pipx run doc8 --ignore-path docs/build --max-line-length=80 docs
+    pipx run hatch run linting:check
+    pipx run yamllint $(find . -name "*.yaml" -or -name "*.yml")
+
 # run static type checks with mypy
 mypy:
     pipx run hatch run mypy:check
@@ -26,4 +32,4 @@ serve-docs:
     mkdir -p {{ justfile_directory() }}/docs/_build/html || true
     pipx run hatch run docs:serve
 
-tests: black mypy pytest doctest
+tests: black lint mypy pytest doctest

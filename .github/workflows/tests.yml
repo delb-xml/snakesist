@@ -2,7 +2,7 @@
 
 name: quality checks
 
-on:
+"on":
   pull_request:
   push:
     branches:
@@ -22,6 +22,7 @@ jobs:
       matrix:
         target:
           - doctest
+          - lint
           - mypy
     steps:
       - uses: actions/checkout@v5

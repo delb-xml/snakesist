@@ -1,10 +1,11 @@
+---
 
 services:
   existdb:
     build:
       context: .
       args:
-        EXIST_VERSION: "${EXIST_VERSION:?The EXIST_VERSION env var has not been set}"
+        EXIST_VERSION: "${EXIST_VERSION:?EXIST_VERSION is undefined}"
     ports:
       - "8080:8080"
     volumes:
@@ -19,3 +20,5 @@ services:
       - ./nginx:/etc/nginx:ro
     depends_on:
       - existdb
+
+...
