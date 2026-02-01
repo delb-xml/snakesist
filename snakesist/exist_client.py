@@ -131,6 +131,7 @@ def _validate_filename(filename: str):
         raise ValueError(f"Invalid filename: '{filename}'")
 
 
+# TODO protect from operations of deleted resources
 class NodeResource:
     """
     A representation of an XML node in a eXist-db resource.
@@ -220,6 +221,7 @@ class NodeResource:
         return self.__document_path
 
 
+# TODO sort attributes and methods
 class ExistClient:
     """
     An eXist-db client object representing a database instance.
@@ -389,6 +391,7 @@ class ExistClient:
         else:
             return None
 
+    # REMOVE?
     @property
     def base_url(self) -> str:
         """
@@ -464,6 +467,7 @@ class ExistClient:
         else:
             return result
 
+    # TODO rename to xquery
     def query(self, query_expression: str) -> TagNodeType:
         """
         Make a database query using XQuery. The configured root collection
@@ -526,6 +530,7 @@ class ExistClient:
         )
         return self.fetch_node(abs_resource_id, node_id)
 
+    # TODO handle unexisting nodes
     def fetch_node(self, document_id: str, node_id: str) -> NodeResource:
         """
         Retrieve a single resource by its internal database IDs.
