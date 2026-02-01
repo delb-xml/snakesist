@@ -6,16 +6,23 @@ Database Client
 
 .. autoclass:: snakesist.ExistClient
 
+
 Resources
 ---------
+
+.. autoclass:: snakesist.NodeResource
+
+
+delb plugins
+------------
 
 .. autoclass:: snakesist.delb_plugins.ExistDBExtension
 
 .. autofunction:: snakesist.delb_plugins.existdb_loader
 
-.. autoclass:: snakesist.NodeResource
 
 Exceptions
 ----------
 
 .. automodule:: snakesist.exceptions
+   :no-inherited-members:

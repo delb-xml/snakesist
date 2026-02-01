@@ -135,15 +135,9 @@ def _validate_filename(filename: str):
 class NodeResource:
     """
     A representation of an XML node in a eXist-db resource.
-    Each Resource object must be coupled to an :class:`ExistClient`.
-
-    Resources are identified by an absolute resource ID that points to the containing
-    document and a node ID within that document.
-
-    :param exist_client: The client to which the resource is coupled.
-    :query_result: A tuple containing the absolute resource ID, node ID
-                   and the node of the resource.
-
+    Each object is coupled to an :class:`ExistClient`.
+    Resources are identified by a document ID that points to the containing document and
+    a node ID within that document.
     """
 
     __slots__ = (
@@ -163,6 +157,7 @@ class NodeResource:
         self.__document_path = query_result.document_path
         self.__exist_client = exist_client
         self.node = query_result.node
+        """ A delb node representation of the node. """
         self.__node_id = query_result.node_id
 
     def __str__(self):
@@ -177,7 +172,10 @@ class NodeResource:
         )
 
     def update_push(self):
-        """Writes the node to the database."""
+        """
+        Writes the current :attr:`NodeResource.node` contents to the database, replacing
+        the previous state.
+        """
         self.__exist_client.update_node(
             document_id=self.__document_id,
             node=self.node,
@@ -224,11 +222,16 @@ class NodeResource:
 # TODO sort attributes and methods
 class ExistClient:
     """
-    An eXist-db client object representing a database instance.
+    An eXist-db client object to interact with a database instance.
     The client can be used for CRUD operations.
     Nodes can be queried using an XPath expression.
-    Queried resources are identified by the absolute resource ID and,
-    if the resource is part of a document, the node ID.
+    Queried resources are identified by a document and a node ID (these map to
+    eXist-db's absolute and relative resource IDs).
+
+    .. caution::
+
+        The node IDs are mere pointers by index to a node within a document. Structural
+        changes to a document may invalidate these and lead to undesired behaviour.
 
     :param host: The name of the database serving host.
     :param port: The port the database instance is listening to.
@@ -394,66 +397,49 @@ class ExistClient:
     # REMOVE?
     @property
     def base_url(self) -> str:
-        """
-        The base URL pointing to the eXist instance.
-        """
+        """The base URL pointing to the eXist instance."""
         return self.__base_url
 
     @property
     def transport(self) -> str:
-        """
-        The used transport protocol
-        """
+        """The used transport protocol."""
         return self.__connection_props.transport
 
     @property
     def host(self) -> str:
-        """
-        The database hostname
-        """
+        """The database hostname."""
         return self.__connection_props.host
 
     @property
     def port(self) -> int:
-        """
-        The database port number
-        """
+        """The database port number."""
         return self.__connection_props.port
 
     @property
     def user(self) -> str:
-        """
-        The user name used to connect to the database
-        """
+        """The user name used to connect to the database."""
         return self.__connection_props.user
 
     @property
     def password(self) -> str:
-        """
-        The password used to connect to the database
-        """
+        """The password used to connect to the database."""
         return self.__connection_props.password
 
     @property
     def prefix(self) -> str:
-        """
-        The URL prefix of the database
-        """
+        """The URL prefix of the database."""
         return str(self.__connection_props.prefix)
 
     @property
     def root_collection(self) -> str:
         """
-        The configured root collection for database queries.
+        The root collection for database queries. The attribute can be changed on an
+        initialized client.
         """
         return str(self.__root_collection)
 
     @root_collection.setter
     def root_collection(self, path: str):
-        """
-        Set the path to the root collection for database
-        queries (e. g. '/db/foo/bar/').
-        """
         self.__root_collection = _mangle_path(path)
 
     @property
@@ -473,7 +459,7 @@ class ExistClient:
         Make a database query using XQuery. The configured root collection
         will be the starting point of the query.
 
-        :param query_expression: XQuery expression
+        :param query_expression: XQuery expression.
         :return: The query result as a :class:`delb.TagNode` object.
         """
         payload = XQUERY_PAYLOAD.substitute(query=query_expression)
@@ -525,6 +511,7 @@ class ExistClient:
         return resources
 
     def retrieve_resource(self, abs_resource_id: str, node_id: str) -> NodeResource:
+        """Deprecated. Use :meth:`ExistClient.fetch_node`"""
         warnings.warn(
             "This method has been renamed to `fetch_node`.", category=DeprecationWarning
         )
@@ -533,11 +520,11 @@ class ExistClient:
     # TODO handle unexisting nodes
     def fetch_node(self, document_id: str, node_id: str) -> NodeResource:
         """
-        Retrieve a single resource by its internal database IDs.
+        Retrieve a node resource by its internal database IDs.
 
-        :param document_id: The absolute resource ID pointing to the document.
+        :param document_id: The ID of a document.
         :param node_id: The node ID locating a node inside a document (optional).
-        :return: The queried node as a ``Resource`` object.
+        :return: The queried resource object.
         """
         queried_node = self.query(
             FETCH_NODE_QUERY.substitute(document_id=document_id, node_id=node_id)
@@ -563,13 +550,12 @@ class ExistClient:
         path = result_node.full_text
         return path
 
-    def update_node(self, node: TagNodeType, document_id: str, node_id: str) -> None:
+    def update_node(self, node: TagNodeType, document_id: str, node_id: str):
         """
-        Replace a sub-document node with an updated version.
+        Replace a node with the contents of the given one.
 
         :param node: An XML node to replace the old one with.
-        :param document_id: The absolute resource ID pointing to the document containing
-                            the node.
+        :param document_id: The document ID of the target.
         :param node_id: The node ID locating the node inside the containing document.
         """
         self.query(

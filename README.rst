@@ -16,6 +16,7 @@ snakesist
 ``snakesist`` is a Python database interface for eXist-db_.
 It supports basic CRUD operations and uses delb_'s models to represent
 documents and nodes.
+It's available at the Python Package Index as snakesist_ package.
 
 .. code-block:: shell
 
@@ -53,7 +54,7 @@ reuse:
     >>> [header.full_text for header in dada_manifest.xpath("//head")]
     ["Hugo Ball", "Das erste dadaistische Manifest"]
     >>> communist_manifest = Document(
-    ...     "communist_manifest.xml", existdb_client=my_local_db
+    ...     "communist_manifest.xml", existdb_client=exist_client
     ... )
     >>> communist_manifest.xpath("//head").first.full_text
     "Manifest der Kommunistischen Partei"
@@ -90,3 +91,4 @@ what's currently considered.
 .. _eXist-db: https://exist-db.org/
 .. _pyproject.toml: https://github.com/delb-xml/snakesist/blob/main/pyproject.toml
 .. _RESTful API: https://www.exist-db.org/exist/apps/doc/devguide_rest.xml
+.. _snakesist: https://pypi.org/p/snakesist

@@ -33,8 +33,9 @@ def existdb_loader(source: Any, config: SimpleNamespace) -> LoaderResult:
     One is to specify an URL with the ``existdb://`` scheme, which can optionally be
     extended with the transport protocol: ``existdb+http://`` or ``existdb+https://``.
 
-    The overall pattern of the URLs is:
-    ``existdb[+http[s]]://[[<username>]:[<password>]@]<host>[:<port>][/<prefix>]/<path>``
+    The overall pattern of the URLs is::
+
+      existdb[+http[s]]://[[<username>]:[<password>]@]<host>[:<port>][ /<prefix>]/<path>
 
     For example:
 
