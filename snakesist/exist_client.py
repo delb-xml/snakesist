@@ -303,11 +303,10 @@ class ExistClient:
         user = parsed_url.username or ""
         password = parsed_url.password or ""
         host = parsed_url.hostname
-        assert host is not None
         port = parsed_url.port
 
-        if not isinstance(host, str) and host:
-            raise SnakesistConfigError(f"Invalid host in URL: {host}")
+        if host is None:
+            raise SnakesistConfigError("No host provided in URL.")
 
         if transport is None:
             probe_result = cls._probe_transport_and_port(
