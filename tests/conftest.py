@@ -35,15 +35,19 @@ def existdb_is_responsive(url):
         return True
 
 
-@fixture
-def db(docker_ip, docker_services, monkeypatch):
-    """
-    Database setup and teardown
-    """
+@fixture(autouse=True)
+def certificate(monkeypatch):
     monkeypatch.setenv(
         "SSL_CERT_FILE",
         str(Path(__file__).resolve().parent / "db_fixture" / "nginx" / "cert.pem"),
     )
+
+
+@fixture(scope="session")
+def db(docker_ip, docker_services):
+    """
+    Database setup and teardown
+    """
     base_url = f"http://{docker_ip}:{docker_services.port_for('existdb', 8080)}"
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.1, check=lambda: existdb_is_responsive(base_url)
@@ -58,14 +62,14 @@ def docker_compose_file():
 
 @fixture
 def sample_document(test_client):
-    Document(SAMPLE_DOCUMENT, existdb_client=test_client).existdb_store(
-        filename="sample.xml", replace_existing=True
-    )
+    document = Document(SAMPLE_DOCUMENT, existdb_client=test_client)
+    document.existdb_store(filename="sample.xml", replace_existing=True)
+    yield document
 
 
 @fixture
 def test_client(db):
-    host, port = db[len("http://") :].split(":")
+    host, port = db.removeprefix("http://").split(":")
     client = ExistClient(
         host=host,
         port=int(port),
