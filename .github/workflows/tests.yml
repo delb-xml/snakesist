@@ -32,7 +32,7 @@ jobs:
         with:
           cache: pip
           python-version: "3.x"
-      - uses: extractions/setup-just@v2
+      - uses: extractions/setup-just@v3
       - run: just ${{ matrix.target }}
 
   tests:
@@ -54,7 +54,7 @@ jobs:
         with:
           cache: pip
           python-version: ${{ matrix.python-version }}
-      - uses: extractions/setup-just@v2
+      - uses: extractions/setup-just@v3
       - run: just pytest
 
 ...
