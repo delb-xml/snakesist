@@ -602,3 +602,17 @@ class ExistClient:
             response.raise_for_status()
         except Exception as e:
             raise SnakesistWriteError("Unhandled error while deleting.") from e
+
+    def fetch_document(self, document_path: str) -> Document:
+        """
+        Fetches a document from the client's configured root collection.
+
+        :param document_path: Path of the document.
+        """
+        from delb import Document  # TODO future lazy import ?
+
+        return Document(
+            f"{self.root_collection_url}/{_mangle_path(document_path)}",
+            existdb_client=self,
+            parser_options=self.parser_options,
+        )
