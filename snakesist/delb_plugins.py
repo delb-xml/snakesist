@@ -139,7 +139,7 @@ class ExistDBExtension(DocumentMixinBase):
     def _init_config(cls, config: SimpleNamespace, kwargs: dict[str, Any]):
         client = kwargs.pop("existdb_client", None)
         if not (client is None or isinstance(client, ExistClient)):
-            raise ValueError("Invalid object passed as existdb_client.")
+            raise SnakesistConfigError("Invalid object passed as existdb_client.")
         config.existdb = SimpleNamespace(
             client=client, collection=PurePosixPath("."), filename=""
         )
