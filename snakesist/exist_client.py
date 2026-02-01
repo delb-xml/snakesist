@@ -6,7 +6,7 @@ import re
 import warnings
 from pathlib import PurePosixPath
 from string import Template
-from typing import Any, Final, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Final, NamedTuple, Optional
 from urllib.parse import urlparse
 
 import httpx
@@ -22,12 +22,15 @@ from snakesist.exceptions import (
     SnakesistWriteError,
 )
 
+if TYPE_CHECKING:
+    from delb import Document
+
 
 class QueryResultItem(NamedTuple):
     document_id: str
     node_id: str
     document_path: str
-    node: XMLNodeType
+    node: TagNodeType
 
 
 class QueryTemplate(Template):
@@ -507,13 +510,13 @@ class ExistClient:
             "//result", namespaces={None: SNAKESIST_NAMESPACE}
         ):
             assert isinstance(result_node, TagNodeType)
-            content_node = result_node[0]
-            assert isinstance(content_node, XMLNodeType)
+            content_node = result_node[0].detach()
+            assert isinstance(content_node, TagNodeType)
             query_result = QueryResultItem(
                 document_id=result_node["documentID"].value,  # type: ignore
                 node_id=result_node["nodeID"].value,  # type: ignore
                 document_path=result_node["path"].value,  # type: ignore
-                node=content_node.detach(),
+                node=content_node,
             )
             resources.append(NodeResource(exist_client=self, query_result=query_result))
         return resources
@@ -534,15 +537,15 @@ class ExistClient:
         """
         queried_node = self.query(
             FETCH_NODE_QUERY.substitute(document_id=document_id, node_id=node_id)
-        )[0]
-
+        )[0].detach()
+        assert isinstance(queried_node, TagNodeType)
         return NodeResource(
             self,
             QueryResultItem(
                 document_id=document_id,
                 node_id=node_id,
                 document_path=self.__get_document_path_of_node(document_id),
-                node=queried_node.detach(),
+                node=queried_node,
             ),
         )
 
@@ -556,12 +559,13 @@ class ExistClient:
         path = result_node.full_text
         return path
 
-    def update_node(self, node: XMLNodeType, document_id: str, node_id: str) -> None:
+    def update_node(self, node: TagNodeType, document_id: str, node_id: str) -> None:
         """
         Replace a sub-document node with an updated version.
 
-        :param data: A well-formed XML string containing the node to replace the old one with.
-        :param document_id: The absolute resource ID pointing to the document containing the node.
+        :param node: An XML node to replace the old one with.
+        :param document_id: The absolute resource ID pointing to the document containing
+                            the node.
         :param node_id: The node ID locating the node inside the containing document.
         """
         self.query(

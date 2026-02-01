@@ -63,7 +63,7 @@ dependencies = [
 ]
 skipinstall = true
 [tool.hatch.envs.mypy.scripts]
-check = "mypy snakesist"
+check = "mypy --check-untyped-defs snakesist"
 
 [tool.hatch.envs.tests]
 dependencies = [
