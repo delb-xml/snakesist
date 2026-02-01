@@ -46,13 +46,13 @@ def test_store_document(test_client):
         "existdb://admin:@localhost:8080/exist/db/apps/test-data/dada_manifest.xml"
     )
     document.existdb_store(replace_existing=True)
+    assert document.existdb_collection == "/db/apps/test-data"
+    assert document.existdb_filename == "dada_manifest.xml"
+
     document.existdb_store(
         collection="/another/collection/",
         filename="another_name.xml",
     )
-    assert document.existdb_collection == "/db/apps/test-data"
-    assert document.existdb_filename == "dada_manifest.xml"
-
     document.existdb_collection = "/another/collection/"
     document.existdb_filename = "another_name.xml"
     with pytest.raises(SnakesistWriteError):

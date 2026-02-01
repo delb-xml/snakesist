@@ -226,3 +226,6 @@ class ExistDBExtension(DocumentMixinBase):
             raise SnakesistWriteError("Unhandled error while storing.") from e
         if not response.status_code == 201:
             raise SnakesistWriteError(f"Unexpected response: {response}")
+
+        self.existdb_collection = collection
+        self.existdb_filename = filename
