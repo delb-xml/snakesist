@@ -3,9 +3,11 @@ import httpx
 
 from delb import Document
 from delb.exceptions import FailedDocumentLoading
+from delb.nodes import TagNode
 from delb.utils import compare_trees
 
 from snakesist import ExistClient
+from snakesist.exceptions import SnakesistConfigError, SnakesistNotFound
 
 
 def test_delete_document(rest_base_url, test_client):
@@ -15,6 +17,9 @@ def test_delete_document(rest_base_url, test_client):
     test_client.delete_document("/bar/foo.xml")
     with pytest.raises(FailedDocumentLoading):
         Document("/bar/foo.xml", existdb_client=test_client)
+
+    with pytest.raises(SnakesistNotFound):
+        test_client.delete_document("/not_exist.xml")
 
 
 def test_delete_node(rest_base_url, test_client):
@@ -31,6 +36,41 @@ def test_delete_node(rest_base_url, test_client):
     response = httpx.get(f"{rest_base_url}&_query=//example[@id='t4']")
     node = response.content.decode()
     assert node == '<example id="t4">i stay</example>'
+
+
+@pytest.mark.parametrize(
+    "url",
+    (
+        # invalid transport
+        "existdb+ftp://localhost/exist/",
+        # invalid protocol
+        "exist://localhost/exist/",
+        # no host
+        "existdb:///exist/",
+        # (likely) unreachable host
+        "existdb://unexist/exist/",
+        # unexisting prefix
+        "existdb://localhost/unexist",
+    ),
+)
+def test_invalid_urls(url):
+    with pytest.raises(SnakesistConfigError):
+        ExistClient.from_url(url)
+
+
+def test_properties(test_client):
+    assert test_client.base_url == "http://admin:@127.0.0.1:8080/exist"
+    assert test_client.host == "127.0.0.1"
+    assert test_client.password == ""
+    assert test_client.port == 8080
+    assert test_client.prefix == "exist"
+    assert test_client.root_collection == "db/tests"
+    assert (
+        test_client.root_collection_url
+        == "http://admin:@127.0.0.1:8080/exist/rest/db/tests"
+    )
+    assert test_client.transport == "http"
+    assert test_client.user == "admin"
 
 
 def test_query_with_lengthy_contents(test_client):
@@ -50,6 +90,18 @@ def test_fetch_node(test_client):
     xpath_result = test_client.xpath("//list")[0]
     resource = test_client.fetch_node(xpath_result.document_id, xpath_result.node_id)
     assert compare_trees(xpath_result.node, resource.node)
+
+
+def test_update_node(sample_document, test_client):
+    resource = test_client.xpath("//list")[0]
+    test_client.update_node(
+        TagNode("updatedNode"),
+        document_id=resource.document_id,
+        node_id=resource.node_id,
+    )
+
+    document = test_client.fetch_document(sample_document.existdb_filename)
+    assert str(document.root) == "<root><updatedNode/></root>"
 
 
 @pytest.mark.usefixtures("db")

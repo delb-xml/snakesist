@@ -17,6 +17,10 @@ mypy:
 pytest:
     pipx run hatch run tests:check
 
+# run the complete testsuite and report code coverage
+pytest-coverage-report:
+    pipx run hatch run tests:coverage-report
+
 # watch, build and serve HTML documentation at 0.0.0.0:8000
 serve-docs:
     mkdir -p {{ justfile_directory() }}/docs/_build/html || true

@@ -2,7 +2,7 @@ import pytest
 
 from delb import Document, FailedDocumentLoading
 from snakesist import ExistClient
-from snakesist.exceptions import SnakesistWriteError
+from snakesist.exceptions import SnakesistConfigError, SnakesistWriteError
 
 
 def test_delete_document(test_client):
@@ -12,6 +12,20 @@ def test_delete_document(test_client):
     document.existdb_delete()
     with pytest.raises(FailedDocumentLoading):
         Document(f"existdb://admin:@localhost:8080/exist/db/tests/{filename}")
+
+
+def test_filename(sample_document):
+    assert sample_document.existdb_filename == "sample.xml"
+
+
+def test_invalid_client(test_client):
+    with pytest.raises(SnakesistConfigError):
+        Document("<foo/>", existdb_client=0)
+
+    document = Document("<foo/>", existdb_client=test_client)
+    document.config.existdb.client = 0
+    with pytest.raises(SnakesistConfigError):
+        document.existdb_store(filename="foo.xml")
 
 
 @pytest.mark.usefixtures("db")
