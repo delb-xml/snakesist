@@ -2,7 +2,7 @@ default: tests
 
 # normalize Python code
 black:
-    pipx run black snakesist tests
+    pipx run black delb_existdb tests
 
 # verifies testable code snippets in the HTML documentation
 doctest:

@@ -1,8 +1,8 @@
 import pytest
 
 from delb import Document, FailedDocumentLoading
-from snakesist import ExistClient
-from snakesist.exceptions import SnakesistConfigError, SnakesistWriteError
+from delb_existdb import ExistClient
+from delb_existdb.exceptions import DelbExistdbConfigError, DelbExistdbWriteError
 
 
 def test_delete_document(test_client):
@@ -19,12 +19,12 @@ def test_filename(sample_document):
 
 
 def test_invalid_client(test_client):
-    with pytest.raises(SnakesistConfigError):
+    with pytest.raises(DelbExistdbConfigError):
         Document("<foo/>", existdb_client=0)
 
     document = Document("<foo/>", existdb_client=test_client)
     document.config.existdb.client = 0
-    with pytest.raises(SnakesistConfigError):
+    with pytest.raises(DelbExistdbConfigError):
         document.existdb_store(filename="foo.xml")
 
 
@@ -69,7 +69,7 @@ def test_store_document(test_client):
     )
     document.existdb_collection = "/another/collection/"
     document.existdb_filename = "another_name.xml"
-    with pytest.raises(SnakesistWriteError):
+    with pytest.raises(DelbExistdbWriteError):
         document.existdb_store()
 
     test_client.root_collection = "/"

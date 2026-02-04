@@ -5,7 +5,7 @@ import httpx
 import pytest
 from delb import Document
 
-from snakesist import ExistClient
+from delb_existdb import ExistClient
 
 SAMPLE_DOCUMENT = """\
 <root>
@@ -75,7 +75,7 @@ def test_client(db):
         prefix="exist/",
         user="admin",
         password="",
-        root_collection="/db/tests",
+        root_collection="/db/apps/test-data",
     )
 
     global exist_version_is_verified

@@ -6,8 +6,8 @@ from delb.exceptions import FailedDocumentLoading
 from delb.nodes import TagNode
 from delb.utils import compare_trees
 
-from snakesist import ExistClient
-from snakesist.exceptions import SnakesistConfigError, SnakesistNotFound
+from delb_existdb import ExistClient
+from delb_existdb.exceptions import DelbExistdbConfigError, DelbExistdbNotFound
 
 
 def test_delete_document(rest_base_url, test_client):
@@ -18,7 +18,7 @@ def test_delete_document(rest_base_url, test_client):
     with pytest.raises(FailedDocumentLoading):
         Document("/bar/foo.xml", existdb_client=test_client)
 
-    with pytest.raises(SnakesistNotFound):
+    with pytest.raises(DelbExistdbNotFound):
         test_client.delete_document("/not_exist.xml")
 
 
@@ -54,7 +54,7 @@ def test_delete_node(rest_base_url, test_client):
     ),
 )
 def test_invalid_urls(url):
-    with pytest.raises(SnakesistConfigError):
+    with pytest.raises(DelbExistdbConfigError):
         ExistClient.from_url(url)
 
 
@@ -64,10 +64,10 @@ def test_properties(test_client):
     assert test_client.password == ""
     assert test_client.port == 8080
     assert test_client.prefix == "exist"
-    assert test_client.root_collection == "db/tests"
+    assert test_client.root_collection == "db/apps/test-data"
     assert (
         test_client.root_collection_url
-        == "http://admin:@127.0.0.1:8080/exist/rest/db/tests"
+        == "http://admin:@127.0.0.1:8080/exist/rest/db/apps/test-data"
     )
     assert test_client.transport == "http"
     assert test_client.user == "admin"

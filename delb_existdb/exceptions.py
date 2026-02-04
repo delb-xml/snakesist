@@ -9,31 +9,31 @@ if TYPE_CHECKING:
     import httpx
 
 
-class SnakesistError(Exception):
-    """Snakesist base exception class."""
+class DelbExistdbError(Exception):
+    """DelbExistdb base exception class."""
 
     pass
 
 
-class SnakesistConfigError(SnakesistError):
+class DelbExistdbConfigError(DelbExistdbError):
     """Raised if the database connection is improperly configured."""
 
     pass
 
 
-class SnakesistReadError(SnakesistError):
+class DelbExistdbReadError(DelbExistdbError):
     """Raised if a writing operation fails."""
 
     pass
 
 
-class SnakesistNotFound(SnakesistReadError):
+class DelbExistdbNotFound(DelbExistdbReadError):
     """Raised if a database resource is not found."""
 
     pass
 
 
-class SnakesistQueryError(SnakesistError):
+class DelbExistdbQueryError(DelbExistdbError):
     """Informs about query errors."""
 
     __slots__ = ("messages", "path", "payload")
@@ -60,7 +60,7 @@ class SnakesistQueryError(SnakesistError):
         return "\n".join(lines)
 
 
-class SnakesistWriteError(SnakesistError):
+class DelbExistdbWriteError(DelbExistdbError):
     """Raised if a reading operation fails"""
 
     pass

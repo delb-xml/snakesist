@@ -4,25 +4,25 @@ API Documentation
 Database Client
 ---------------
 
-.. autoclass:: snakesist.ExistClient
+.. autoclass:: delb_existdb.ExistClient
 
 
 Resources
 ---------
 
-.. autoclass:: snakesist.NodeResource
+.. autoclass:: delb_existdb.NodeResource
 
 
 delb plugins
 ------------
 
-.. autoclass:: snakesist.delb_plugins.ExistDBExtension
+.. autoclass:: delb_existdb.delb_plugins.ExistDBExtension
 
-.. autofunction:: snakesist.delb_plugins.existdb_loader
+.. autofunction:: delb_existdb.delb_plugins.existdb_loader
 
 
 Exceptions
 ----------
 
-.. automodule:: snakesist.exceptions
+.. automodule:: delb_existdb.exceptions
    :no-inherited-members:

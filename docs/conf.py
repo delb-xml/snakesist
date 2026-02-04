@@ -11,9 +11,9 @@ from importlib.metadata import version
 
 # -- Project information -----------------------------------------------------
 
-project = "snakesist"
-copyright = "2019, Theo Costea"
-author = "Theo Costea"
+project = "delb-existdb"
+copyright = "2019-%Y, Theo Costea & Frank Sachsenheim"
+author = "Theo Costea & Frank Sachsenheim"
 
 # The full version, including alpha/beta/rc tags
 release = version(project)
@@ -57,7 +57,7 @@ html_theme = "furo"
 html_logo = "snakesist-logo.png"
 html_theme_options = {
     "navigation_with_keys": True,
-    "source_repository": "https://github.com/delb-xml/snakesist/",
+    "source_repository": "https://github.com/delb-xml/delb-existdb/",
     "source_branch": "main",
     "source_directory": "docs/",
 }
