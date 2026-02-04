@@ -14,12 +14,12 @@ from _delb.builder import parse_tree
 from _delb.parser import ParserOptions
 from _delb.typing import TagNodeType
 
-from snakesist.exceptions import (
-    SnakesistConfigError,
-    SnakesistNotFound,
-    SnakesistQueryError,
-    SnakesistReadError,
-    SnakesistWriteError,
+from delb_existdb.exceptions import (
+    DelbExistdbConfigError,
+    DelbExistdbNotFound,
+    DelbExistdbQueryError,
+    DelbExistdbReadError,
+    DelbExistdbWriteError,
 )
 
 if TYPE_CHECKING:
@@ -52,7 +52,7 @@ DEFAULT_PORT: Final = 8080
 DEFAULT_USER: Final = "admin"
 DEFAULT_PASSWORD: Final = ""
 EXISTDB_NAMESPACE: Final = "http://exist.sourceforge.net/NS/exist"
-SNAKESIST_NAMESPACE: Final = "https://snakesist.readthedocs.io/"
+DELB_EXISTDB_NAMESPACE: Final = "https://delb-existdb.readthedocs.io/"
 TRANSPORT_PROTOCOLS: Final = {"https": 443, "http": 80}  # the order matters!
 
 
@@ -87,18 +87,21 @@ UPDATE_NODE_QUERY: Final = QueryTemplate(
 XPATH_QUERY: Final = QueryTemplate(
     """\
 for $node in @expression return
-<s:result xmlns:s="SNAKESIST_NAMESPACE"
+<s:result xmlns:s="DELB_EXISTDB_NAMESPACE"
   s:documentID="{util:absolute-resource-id($node)}"
   s:nodeID="{util:node-id($node)}"
   s:path="{DOCUMENT_PATH}"
 >{$node}</s:result>
-""".replace("DOCUMENT_PATH", DOCUMENT_PATH_OF_NODE).replace(
-        "SNAKESIST_NAMESPACE", SNAKESIST_NAMESPACE
+""".replace(
+        "DOCUMENT_PATH", DOCUMENT_PATH_OF_NODE
+    ).replace(
+        "SNAKESIST_NAMESPACE", DELB_EXISTDB_NAMESPACE
     )
 )
 
 
-XQUERY_PAYLOAD: Final = QueryTemplate("""\
+XQUERY_PAYLOAD: Final = QueryTemplate(
+    """\
 <query xmlns="EXISTDB_NAMESPACE" start="1" max="0" cache="no">
   <text><![CDATA[@query]]></text>
   <properties>
@@ -106,7 +109,10 @@ XQUERY_PAYLOAD: Final = QueryTemplate("""\
     <property name="wrap" value="yes"/>
   </properties>
 </query>
-""".replace("EXISTDB_NAMESPACE", EXISTDB_NAMESPACE))
+""".replace(
+        "EXISTDB_NAMESPACE", EXISTDB_NAMESPACE
+    )
+)
 
 
 #
@@ -271,6 +277,7 @@ class ExistClient:
             )
         else:
             self.parser_options = parser_options._replace(encoding="UTF-8")
+        # TODO add rest_url (rest endpoint w/o collection)
         self.root_collection = root_collection
 
     @classmethod
@@ -291,11 +298,11 @@ class ExistClient:
         elif parsed_url.scheme.startswith("existdb+"):
             transport = parsed_url.scheme.split("+")[1]
             if transport not in TRANSPORT_PROTOCOLS:
-                raise SnakesistConfigError(
+                raise DelbExistdbConfigError(
                     f"Invalid transport '{transport}' for existdb."
                 )
         else:
-            raise SnakesistConfigError(
+            raise DelbExistdbConfigError(
                 f"Invalid URL scheme '{parsed_url.scheme}' for existdb."
             )
 
@@ -305,14 +312,14 @@ class ExistClient:
         port = parsed_url.port
 
         if host is None:
-            raise SnakesistConfigError("No host provided in URL.")
+            raise DelbExistdbConfigError("No host provided in URL.")
 
         if transport is None:
             probe_result = cls._probe_transport_and_port(
                 f"{user}:{password}@{host}", port
             )
             if probe_result is None:
-                raise SnakesistConfigError(
+                raise DelbExistdbConfigError(
                     f"Couldn't figure out how to talk to {host}."
                 )
             transport, port = probe_result
@@ -323,7 +330,7 @@ class ExistClient:
             f"{transport}://{user}:{password}@{host}:{port}", parsed_url.path
         )
         if prefix is None:
-            raise SnakesistConfigError(
+            raise DelbExistdbConfigError(
                 "Couldn't determine the location of the 'rest' interface."
             )
 
@@ -363,7 +370,7 @@ class ExistClient:
             response = httpx.get(f"{base}/{'/'.join(path_parts[:i])}/rest/")
 
             if response.status_code == 401:
-                raise SnakesistConfigError("Failed authentication.")
+                raise DelbExistdbConfigError("Failed authentication.")
 
             if not content_type_is_xml(response.headers.get("Content-Type", "")):
                 if encountered_collection:
@@ -432,6 +439,7 @@ class ExistClient:
         """
         return str(self.__root_collection)
 
+    # FIXME this shouldn't be possible
     @root_collection.setter
     def root_collection(self, path: str):
         self.__root_collection = _mangle_path(path)
@@ -458,18 +466,19 @@ class ExistClient:
         """
         payload = XQUERY_PAYLOAD.substitute(query=query_expression)
         response = self.http_client.post(
+            # TODO use self.rest_url?
             self.root_collection_url,
             headers={"Content-Type": "application/xml"},
             content=payload,
         )
 
         if response.status_code == 400:
-            raise SnakesistQueryError(payload, response)
+            raise DelbExistdbQueryError(payload, response)
 
         try:
             response.raise_for_status()
         except Exception as e:
-            raise SnakesistReadError("Unhandled query error.") from e
+            raise DelbExistdbReadError("Unhandled query error.") from e
 
         result = parse_tree(response.text, options=self.parser_options)
         assert isinstance(result, TagNodeType)
@@ -490,7 +499,7 @@ class ExistClient:
         assert results_node.local_name == "result"
         resources = []
         for result_node in results_node.xpath(
-            "//result", namespaces={None: SNAKESIST_NAMESPACE}
+            "//result", namespaces={None: DELB_EXISTDB_NAMESPACE}
         ):
             assert isinstance(result_node, TagNodeType)
             content_node = result_node[0].detach()
@@ -582,11 +591,11 @@ class ExistClient:
             f"{self.root_collection_url}/{_mangle_path(document_path)}"
         )
         if response.status_code == 404:
-            raise SnakesistNotFound(f"Document '{document_path}' not found.")
+            raise DelbExistdbNotFound(f"Document '{document_path}' not found.")
         try:
             response.raise_for_status()
         except Exception as e:
-            raise SnakesistWriteError("Unhandled error while deleting.") from e
+            raise DelbExistdbWriteError("Unhandled error while deleting.") from e
 
     def fetch_document(self, document_path: str) -> Document:
         """

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "snakesist"
+name = "delb-existdb"
 version = "0.4-rc1"
 description = "A Python database interface for eXist-db"
 authors = [
@@ -34,15 +34,15 @@ dependencies = [
 ]
 
 [project.entry-points.delb]
-snakesist = "snakesist.delb_plugins"
+delb-existdb = "delb_existdb.delb_plugins"
 
 [project.license]
 file = "LICENSE.txt"
 
 [project.urls]
-Documentation = "https://snakesist.readthedocs.io/"
-Issues = "https://github.com/delb-xml/snakesist"
-Repository = "https://github.com/delb-xml/snakesist"
+Documentation = "https://delb-existdb.readthedocs.io/"
+Issues = "https://github.com/delb-xml/delb-existdb"
+Repository = "https://github.com/delb-xml/delb-existdb"
 
 
 [tool.flake8]
@@ -68,7 +68,7 @@ build-html = "make -C docs html"
 clean = "make -C docs clean"
 doctest = "make -C docs doctest"
 linkcheck = "make -C docs linkcheck"
-serve = "sphinx-autobuild --open-browser --delay 2 --watch docs --watch snakesist docs docs/_build/html/"
+serve = "sphinx-autobuild --open-browser --delay 2 --watch docs --watch delb_existdb docs docs/_build/html/"
 
 [tool.hatch.envs.linting]
 dependencies = [
@@ -90,7 +90,7 @@ dependencies = [
 ]
 detached = true
 [tool.hatch.envs.linting.scripts]
-check = "flake8 snakesist tests"
+check = "flake8 delb_existdb tests"
 
 [tool.hatch.envs.mypy]
 dependencies = [
@@ -99,7 +99,7 @@ dependencies = [
 ]
 skipinstall = true
 [tool.hatch.envs.mypy.scripts]
-check = "mypy --check-untyped-defs snakesist"
+check = "mypy --check-untyped-defs delb_existdb"
 
 [tool.hatch.envs.tests]
 dependencies = [
@@ -116,11 +116,11 @@ existdb_version = [
     "6.4.0"
 ]
 [tool.hatch.envs.tests.scripts]
-check = "python -m pytest --cov=snakesist tests"
+check = "python -m pytest --cov=delb_existdb tests"
 coverage-report = """
     python -m pytest \
         --cov-report term-missing:skip-covered \
-        --cov=snakesist \
+        --cov=delb_existdb \
         tests
 """
 

@@ -16,7 +16,8 @@ def test_document_path(test_client):
     assert resource.document_path == "/db/tests/sample.xml"
 
 
-def test_update_push_and_pull(sample_document, test_client):
+@pytest.mark.usefixtures("sample_document")
+def test_update_push_and_pull(test_client):
     resource = test_client.xpath("//list")[0]
     resource.node.local_name = "lost"
     resource.update_push()

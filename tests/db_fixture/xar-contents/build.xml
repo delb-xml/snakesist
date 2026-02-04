@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project default="xar" name="snakesist-test-data">
-    <target name="xar">
-        <zip destfile="build/snakesist-test-data.xar">
+<project default="xar" name="delb-existdb-test-data">
+  <target name="xar">
+    <zip destfile="build/delb-existdb-test-data.xar">
 	    <fileset dir=".">
-                <exclude name="build/"/>
-                <exclude name="build.xml"/>
+        <exclude name="build/"/>
+        <exclude name="build.xml"/>
 	    </fileset>
-        </zip>
-    </target>
+    </zip>
+  </target>
 </project>

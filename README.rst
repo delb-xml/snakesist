@@ -1,28 +1,25 @@
-snakesist
-=========
+delb-existdb
+============
 
-.. image:: https://img.shields.io/pypi/l/snakesist.svg
-    :target: https://github.com/delb-xml/snakesist/blob/main/LICENSE.txt
+.. image:: https://img.shields.io/pypi/l/delb-existdb.svg
+    :target: https://github.com/delb-xml/delb-existdb/blob/main/LICENSE.txt
     :alt: License
 
-.. image:: https://img.shields.io/pypi/pyversions/snakesist.svg
+.. image:: https://img.shields.io/pypi/pyversions/delb-existdb.svg
     :alt: Python versions
 
-.. image:: https://readthedocs.org/projects/snakesist/badge/?version=latest
-    :target: https://snakesist.readthedocs.io/en/latest/
+.. image:: https://readthedocs.org/projects/delb-existdb/badge/?version=latest
+    :target: https://delb-existdb.readthedocs.io/en/latest/
     :alt: Documentation Status
 
 
-``snakesist`` is a Python database interface for eXist-db_.
+``delb-existdb`` is a Python database interface for eXist-db_, it was initially
+named ``snakesist`` until its 0.3 release.
 It supports basic CRUD operations and uses delb_'s models to represent
 documents and nodes.
-It's available at the Python Package Index as snakesist_ package.
+It's available at the Python Package Index as delb-existdb_ package.
 
-.. code-block:: shell
-
-    pip install snakesist
-
-``snakesist`` allows you to access individual documents from the database using
+``delb-existdb`` allows you to access individual documents from the database using
 a :class:`delb.Document` object, either by simply passing a URL:
 
 .. code-block:: python
@@ -41,7 +38,7 @@ reuse:
 
 .. code-block:: python
 
-    >>> from snakesist import ExistClient
+    >>> from delb_existdb import ExistClient
 
     >>> exist_client = ExistClient(
     ...     host="localhost",
@@ -70,10 +67,10 @@ across multiple documents:
 You can of course also modify and store documents back into the database or create new ones and store them.
 
 
-Your eXist instance
--------------------
+Your eXist-db instance
+----------------------
 
-*snakesist* leverages eXist's `RESTful API`_ for database operations. This
+*delb-existdb* leverages eXist's `RESTful API`_ for database operations. This
 means that allowing database queries using POST requests on the RESTful API is
 a requirement in the used eXist-db instance. eXist allows this by default, so
 if you haven't configured your instance otherwise, don't worry about it.
@@ -89,6 +86,6 @@ what's currently considered.
 .. _delb: https://delb.readthedocs.io/
 .. _documents collection: https://exist-db.org/exist/apps/doc/using-collections
 .. _eXist-db: https://exist-db.org/
-.. _pyproject.toml: https://github.com/delb-xml/snakesist/blob/main/pyproject.toml
+.. _pyproject.toml: https://github.com/delb-xml/delb-existdb/blob/main/pyproject.toml
 .. _RESTful API: https://www.exist-db.org/exist/apps/doc/devguide_rest.xml
-.. _snakesist: https://pypi.org/p/snakesist
+.. _delb-existdb: https://pypi.org/p/delb-existdb

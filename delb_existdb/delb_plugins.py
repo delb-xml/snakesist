@@ -12,13 +12,13 @@ from _delb.plugins import plugin_manager, DocumentMixinBase
 from _delb.plugins.web_loader import web_loader
 
 
-from snakesist.exceptions import (
-    SnakesistConfigError,
-    SnakesistWriteError,
-    SnakesistReadError,
-    SnakesistNotFound,
+from delb_existdb.exceptions import (
+    DelbExistdbConfigError,
+    DelbExistdbWriteError,
+    DelbExistdbReadError,
+    DelbExistdbNotFound,
 )
-from snakesist.exist_client import _mangle_path, _validate_filename, ExistClient
+from delb_existdb.exist_client import _mangle_path, _validate_filename, ExistClient
 
 if TYPE_CHECKING:
     from _delb.typing import LoaderResult
@@ -52,13 +52,13 @@ def existdb_loader(source: Any, config: SimpleNamespace) -> LoaderResult:
 
     The other way is to pass a configured client as ``existdb_client`` keyword and a
     path as string or :class:`pathlib.PurePosixPath` that points to the document within
-    the client's configured :attr:`snakesist.ExistClient.root_collection`, hence this
+    the client's configured :attr:`delb_existdb.ExistClient.root_collection`, hence this
     would be an equivalent to the example above, assuming that ``https`` is available on
     the addressed host:
 
     .. code-block:: python
 
-        client = snakesist.ExistClient(
+        client = delb_existdb.ExistClient(
             transport="https",
             host="example.org",
             port=443,
@@ -68,8 +68,8 @@ def existdb_loader(source: Any, config: SimpleNamespace) -> LoaderResult:
         document = delb.Document("document.xml", existdb_client=client)
 
     In both cases the document instance will have a configured ``config`` namespace
-    ``existdb`` with the property ``client`` which is a :class:`snakesist.ExistClient`
-    instance.
+    ``existdb`` with the property ``client`` which is a
+    :class:`delb_existdb.ExistClient` instance.
 
     Further interaction with the database is facilitated with the
     :class:`ExistDBExtension` that extends the :class:`delb.Document` class.
@@ -108,10 +108,11 @@ def load_from_path(source: Any, config: SimpleNamespace) -> LoaderResult:
         result = web_loader(url, config, client=client.http_client)
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 404:
-            raise SnakesistNotFound(f"Document '{path}' not found.")
-        raise SnakesistReadError("Could not read from database.") from e
+            raise DelbExistdbNotFound(f"Document '{path}' not found.")
+        raise DelbExistdbReadError("Could not read from database.") from e
 
     config.__dict__.pop("source_url", None)
+    # FIXME str(parent.path)
     config.existdb.collection = path.parent
     config.existdb.filename = path.name
     return result
@@ -121,7 +122,7 @@ def ensure_configured_client(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         if not isinstance(self.config.existdb.client, ExistClient):
-            raise SnakesistConfigError(
+            raise DelbExistdbConfigError(
                 f"The document {self!r} has no configured eXist-db client."
             )
         return method(self, *args, **kwargs)
@@ -143,9 +144,10 @@ class ExistDBExtension(DocumentMixinBase):
     def _init_config(cls, config: SimpleNamespace, kwargs: dict[str, Any]):
         client = kwargs.pop("existdb_client", None)
         if not (client is None or isinstance(client, ExistClient)):
-            raise SnakesistConfigError("Invalid object passed as existdb_client.")
+            raise DelbExistdbConfigError("Invalid object passed as existdb_client.")
+        # FIXME use collection from client
         config.existdb = SimpleNamespace(
-            client=client, collection=PurePosixPath("."), filename=""
+            client=client, collection=client.root_collection, filename=""
         )
         super()._init_config(config, kwargs)
 
@@ -155,10 +157,11 @@ class ExistDBExtension(DocumentMixinBase):
         The collection within an eXist-db instance where the document was fetched from.
         This property can be changed to designate another location to store to.
         """
-        return f"/{self.config.existdb.collection}"
+        return self.config.existdb.collection
 
     @existdb_collection.setter
     def existdb_collection(self, path: str):
+        # FIXME this shouldn't be possible
         self.config.existdb.collection = _mangle_path(path)
 
     @ensure_configured_client
@@ -168,9 +171,8 @@ class ExistDBExtension(DocumentMixinBase):
         the current :attr:`ExistDBExtension.existdb_collection` and
         :attr:`ExistDBExtension.existdb_filename` in the associated eXist-db instance.
         """
-        self.config.existdb.client.delete_document(
-            f"{self.existdb_collection}/{self.existdb_filename}"
-        )
+        assert self.existdb_collection == self.config.existdb.client.root_collection
+        self.config.existdb.client.delete_document(self.existdb_filename)
 
     @property
     def existdb_filename(self) -> str:
@@ -203,6 +205,7 @@ class ExistDBExtension(DocumentMixinBase):
 
         client = self.config.existdb.client
         if collection is None:
+            # FIXME rather associate new client object with new collection
             collection = self.existdb_collection
         else:
             collection = str(_mangle_path(collection))
@@ -212,10 +215,11 @@ class ExistDBExtension(DocumentMixinBase):
             _validate_filename(filename)
 
         http_client = self.config.existdb.client.http_client
+        # FIXME collection is redundant
         url = f"{client.root_collection_url}/{collection}/{filename}"
 
         if not replace_existing and http_client.head(url).status_code == 200:
-            raise SnakesistWriteError(
+            raise DelbExistdbWriteError(
                 "Document already exists. Overwriting must be allowed explicitly."
             )
 
@@ -227,9 +231,10 @@ class ExistDBExtension(DocumentMixinBase):
         try:
             response.raise_for_status()
         except Exception as e:
-            raise SnakesistWriteError("Unhandled error while storing.") from e
+            raise DelbExistdbWriteError("Unhandled error while storing.") from e
         if not response.status_code == 201:
-            raise SnakesistWriteError(f"Unexpected response: {response}")
+            raise DelbExistdbWriteError(f"Unexpected response: {response}")
 
+        # FIXME rather associate new client object with new collection
         self.existdb_collection = collection
         self.existdb_filename = filename
